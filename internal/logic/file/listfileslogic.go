@@ -44,8 +44,8 @@ func (l *ListFilesLogic) ListFiles(req *types.ListFilesRequest) (resp *types.Lis
 	// 初始化GORM Gen查询构建器
 	query := dao.Use(l.svcCtx.DB)
 
-	// 构建基础查询条件
-	fileQueryBuilder := query.File.WithContext(l.ctx)
+	// 构建基础查询条件 - 添加过滤已删除文件的条件
+	fileQueryBuilder := query.File.WithContext(l.ctx).Where(query.File.DeletedAt.Eq(0))
 
 	// 应用过滤条件
 	if req.UserID != "" {

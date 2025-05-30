@@ -80,7 +80,7 @@ func (l *UploadFileLogic) UploadFile(req *types.FileUploadRequest) (resp *types.
 		if _, err := file.Read(fileHeaderBytes); err != nil {
 			return nil, fmt.Errorf("Failed to read file header: %w", err)
 		}
-		// 重置文件指针以便后续操作
+		// Reset file pointer for subsequent operations
 		if _, err := file.Seek(0, 0); err != nil {
 			return nil, fmt.Errorf("Failed to reset file pointer: %w", err)
 		}
@@ -89,10 +89,10 @@ func (l *UploadFileLogic) UploadFile(req *types.FileUploadRequest) (resp *types.
 			return nil, fmt.Errorf("Failed to determine file type: %w", err)
 		}
 		if kind == filetype.Unknown {
-			// 如果无法识别文件类型，检查文件扩展名
+			// If file type cannot be recognized, check file extension
 			extension := strings.ToLower(filepath.Ext(fileName))
 
-			// 为常见文本文件类型设置正确的 MIME 类型
+			// Set correct MIME types for common text file types
 			textExtensions := map[string]string{
 				".md":   "text/markdown",
 				".txt":  "text/plain",
@@ -161,25 +161,69 @@ func (l *UploadFileLogic) UploadFile(req *types.FileUploadRequest) (resp *types.
 	query := dao.Use(l.svcCtx.DB)
 
 	// Check if file with same hash already exists in database using gorm gen
-	existingFile, err := query.File.Where(query.File.FileID.Eq(fileID)).First()
+	// Check if files with the same hash already exist (including files from same user and other users)
+	existingFile, err := query.File.Where(
+		query.File.FileID.Eq(fileID),
+		query.File.DeletedAt.Eq(0), // Only check non-deleted files
+	).First()
+
 	if err == nil && existingFile != nil {
-		// File with same hash already exists, clean up the uploaded file
-		l.cleanupFile(storePath)
-		return nil, fmt.Errorf("File with identical content already exists (ID: %s)", fileID)
+		// File already exists, handle differently based on owner
+		if existingFile.UserID == userId {
+			// Duplicate file from same user
+			l.Info("User attempting to upload duplicate file",
+				logx.Field("userId", userId),
+				logx.Field("fileID", fileID),
+				logx.Field("fileName", fileName),
+				logx.Field("existingFileName", existingFile.FileName))
+
+			// Clean up the just uploaded duplicate file
+			l.cleanupFile(storePath)
+
+			return nil, fmt.Errorf("you have already uploaded a file with identical content (file name: %s, upload time: %s)",
+				existingFile.FileName,
+				time.Unix(existingFile.CreatedAt, 0).Format("2006-01-02 15:04:05"))
+		} else {
+			// Same content file already uploaded by different user
+			l.Info("File with same content exists from different user",
+				logx.Field("currentUserId", userId),
+				logx.Field("existingUserId", existingFile.UserID),
+				logx.Field("fileID", fileID),
+				logx.Field("fileName", fileName))
+
+			// In this case, we can choose to:
+			// 1. Allow upload (different users can have files with same content)
+			// 2. Reject upload with notification
+			// Here we choose to allow upload but log for monitoring
+			l.Info("Allowing upload of duplicate content for different user")
+			// 继续执行上传流程，不返回错误
+		}
 	} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		// Database error
-		l.Error("Failed to check for existing file", logx.Field("error", err))
+		// 数据库查询错误（非记录不存在错误）
+		l.Error("Failed to check for existing file",
+			logx.Field("fileID", fileID),
+			logx.Field("userId", userId),
+			logx.Field("fileName", fileName),
+			logx.Field("error", err))
+
+		// 清理已上传的文件
 		l.cleanupFile(storePath)
-		return nil, fmt.Errorf("Failed to check for duplicate file: %w", err)
+
+		return nil, fmt.Errorf("检查文件重复性时发生数据库错误: %w", err)
 	}
+
+	// 如果到这里说明：
+	// 1. 文件不存在（err == gorm.ErrRecordNotFound）
+	// 2. 或者文件存在但属于其他用户且我们允许重复上传
+	// 继续执行后续流程
 
 	// Process file tags, splitting by comma
 	// TODO: I hope tags auto generate, use some LLM or NLP to generate tags
 	var tags []string
 	if req.Tags != "" {
 		// Split and clean tags
-		rawTags := strings.Split(req.Tags, ",")
-		for _, tag := range rawTags {
+		rawTags := strings.SplitSeq(req.Tags, ",")
+		for tag := range rawTags {
 			trimmedTag := strings.TrimSpace(tag)
 			if trimmedTag != "" {
 				tags = append(tags, trimmedTag)
@@ -202,6 +246,7 @@ func (l *UploadFileLogic) UploadFile(req *types.FileUploadRequest) (resp *types.
 		Tags:        tags,
 		Description: req.Description,
 	}
+	l.Infof("File metadata created successfully: %+v", metadata)
 
 	// Save metadata to database using the model directly
 	fileModel := model.File{

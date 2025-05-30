@@ -7,8 +7,7 @@ curl -X POST "http://localhost:8888/api/v1/files/upload" \
     -F "fileType=text/markdown" \
     -F "description=This is a test file" \
     -F "tags=test,document" \
-    -F "commitMessage=Initial upload" \
-    -v
+    -F "commitMessage=Initial upload"
 
 curl -X POST "http://localhost:8888/api/v1/files/upload" \
     -H "Authorization: Bearer your_token_here" \
@@ -17,5 +16,4 @@ curl -X POST "http://localhost:8888/api/v1/files/upload" \
     -F "fileType=text/markdown" \
     -F "description=This is a test file" \
     -F "tags=test,document" \
-    -F "commitMessage=Initial upload" \
-    -v
+    -F "commitMessage=Initial upload"

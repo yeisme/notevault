@@ -1,6 +1,6 @@
 -- 文件基础信息表
 CREATE TABLE IF NOT EXISTS files (
-    file_id VARCHAR(64) PRIMARY KEY,
+    file_id VARCHAR(128) PRIMARY KEY,
     -- 文件唯一ID (使用字符串存储UUID)
     user_id VARCHAR(64) NOT NULL,
     -- 文件所属用户ID
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS files (
     deleted_at BIGINT DEFAULT NULL,
     -- 软删除时间(Unix时间戳)，NULL表示未删除
     status SMALLINT NOT NULL DEFAULT 0,
-    -- 文件状态: 0=正常, 1=存档, 2=回收站, 3=待删除
+    -- 文件状态: 0=正常, 1=存档, 2=管理员回收站, 3=待删除（用户回收站）
     trashed_at BIGINT DEFAULT NULL,
     -- 移入回收站时间(Unix时间戳)
     current_version INT NOT NULL DEFAULT 1,
@@ -35,7 +35,7 @@ CREATE INDEX idx_files_created_at ON files(created_at);
 CREATE INDEX idx_files_updated_at ON files(updated_at);
 -- 文件版本表
 CREATE TABLE IF NOT EXISTS file_versions (
-    version_id VARCHAR(128) PRIMARY KEY,
+    version_id VARCHAR(192) PRIMARY KEY,
     -- 版本唯一ID
     file_id VARCHAR(64) NOT NULL,
     -- 关联的文件ID
