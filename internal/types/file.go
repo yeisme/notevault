@@ -29,6 +29,7 @@ type FileDownloadRequest struct {
 }
 
 type FileUploadRequest struct {
+	FileID        string `form:"fileId,optional"`        // Optional: If provided, upload as a new version of existing file
 	FileName      string `form:"fileName,optional"`      // Optional: If not provided, the name of the uploaded file will be used
 	FileType      string `form:"fileType,optional"`      // Optional: Can be inferred or specified
 	Description   string `form:"description,optional"`   // Description

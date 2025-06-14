@@ -50,6 +50,33 @@ func (l *UploadFileLogic) UploadFile(req *types.FileUploadRequest) (resp *types.
 		userId = "notevault"
 	}
 
+	// Check if this is a new version upload
+	isNewVersion := req.FileID != ""
+	var existingFile *model.File
+	var newVersionNumber int32 = 1
+
+	if isNewVersion {
+		// Initialize the query using gorm gen
+		query := dao.Use(l.svcCtx.DB)
+
+		// Verify the existing file belongs to the user
+		existingFile, err = query.File.Where(
+			query.File.FileID.Eq(req.FileID),
+			query.File.UserID.Eq(userId),
+			query.File.DeletedAt.Eq(0),
+		).First()
+
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, fmt.Errorf("File not found or you don't have permission to upload new version")
+			}
+			return nil, fmt.Errorf("Failed to query existing file: %w", err)
+		}
+
+		newVersionNumber = existingFile.CurrentVersion + 1
+		l.Infof("Uploading new version %d for file %s", newVersionNumber, req.FileID)
+	}
+
 	// frontend also check file size, but we need to check it again here
 	// TODO: use multipart instead of FromFile
 	file, fileHeader, err := l.r.FormFile("file")
@@ -126,13 +153,13 @@ func (l *UploadFileLogic) UploadFile(req *types.FileUploadRequest) (resp *types.
 	// Calculate file hash (sha256) before uploading
 	hash := sha256.New()
 	if _, err := io.Copy(hash, file); err != nil {
-		return nil, fmt.Errorf("Failed to calculate file hash: %w", err)
+		return nil, fmt.Errorf("failed to calculate file hash: %w", err)
 	}
 	fileID := fmt.Sprintf("%x", hash.Sum(nil))
 
 	// Reset file pointer to beginning for upload
 	if _, err := file.Seek(0, 0); err != nil {
-		return nil, fmt.Errorf("Failed to reset file for upload: %w", err)
+		return nil, fmt.Errorf("failed to reset file for upload: %w", err)
 	}
 
 	// Get the timestamp and yearMonth format
@@ -162,32 +189,33 @@ func (l *UploadFileLogic) UploadFile(req *types.FileUploadRequest) (resp *types.
 
 	// Check if file with same hash already exists in database using gorm gen
 	// Check if files with the same hash already exist (including files from same user and other users)
-	existingFile, err := query.File.Where(
+	var existingFileByHash *model.File
+	existingFileByHash, err = query.File.Where(
 		query.File.FileID.Eq(fileID),
 		query.File.DeletedAt.Eq(0), // Only check non-deleted files
 	).First()
 
-	if err == nil && existingFile != nil {
+	if err == nil && existingFileByHash != nil {
 		// File already exists, handle differently based on owner
-		if existingFile.UserID == userId {
+		if existingFileByHash.UserID == userId {
 			// Duplicate file from same user
 			l.Info("User attempting to upload duplicate file",
 				logx.Field("userId", userId),
 				logx.Field("fileID", fileID),
 				logx.Field("fileName", fileName),
-				logx.Field("existingFileName", existingFile.FileName))
+				logx.Field("existingFileName", existingFileByHash.FileName))
 
 			// Clean up the just uploaded duplicate file
 			l.cleanupFile(storePath)
 
 			return nil, fmt.Errorf("you have already uploaded a file with identical content (file name: %s, upload time: %s)",
-				existingFile.FileName,
-				time.Unix(existingFile.CreatedAt, 0).Format("2006-01-02 15:04:05"))
+				existingFileByHash.FileName,
+				time.Unix(existingFileByHash.CreatedAt, 0).Format("2006-01-02 15:04:05"))
 		} else {
 			// Same content file already uploaded by different user
 			l.Info("File with same content exists from different user",
 				logx.Field("currentUserId", userId),
-				logx.Field("existingUserId", existingFile.UserID),
+				logx.Field("existingUserId", existingFileByHash.UserID),
 				logx.Field("fileID", fileID),
 				logx.Field("fileName", fileName))
 

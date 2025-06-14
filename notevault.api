@@ -33,6 +33,7 @@ type (
 	// FileUploadRequest defines the request for uploading a file
 	// Implementation of file chunking and resumable uploads is typically handled at the client and server transport layer, while at the API level it still appears as a file upload
 	FileUploadRequest {
+		FileID        string `form:"fileId,optional"` // Optional: If provided, upload as a new version of existing file
 		FileName      string `form:"fileName,optional"` // Optional: If not provided, the name of the uploaded file will be used
 		FileType      string `form:"fileType,optional"` // Optional: Can be inferred or specified
 		Description   string `form:"description,optional"` // Description

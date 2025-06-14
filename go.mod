@@ -7,6 +7,7 @@ require (
 	github.com/h2non/filetype v1.1.3
 	github.com/minio/minio-go/v7 v7.0.91
 	github.com/nats-io/nats.go v1.42.0
+	github.com/sergi/go-diff v1.4.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1
 	github.com/zeromicro/go-zero v1.8.3
