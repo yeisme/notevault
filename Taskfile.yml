@@ -1,0 +1,12 @@
+version: 3
+
+tasks:
+  default:
+    cmds:
+      - task: build
+    desc: default task
+
+  build:
+    cmds:
+      - go build ./cmd/notevault
+    desc: Build the Go application
