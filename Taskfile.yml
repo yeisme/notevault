@@ -10,3 +10,8 @@ tasks:
     cmds:
       - go build ./cmd/notevault
     desc: Build the Go application
+
+  build:release:
+    cmds:
+      - go build -ldflags="-s -w" -o ./bin/notevault{{ exeExt }} ./cmd/notevault
+    desc: Build the Go application for release

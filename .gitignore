@@ -27,3 +27,5 @@ profile.cov
 .idea/
 .vscode/
 
+# Added by goreleaser init:
+dist/
