@@ -29,7 +29,6 @@ var (
 				fmt.Printf("Error initializing config: %v\n", err)
 				os.Exit(1)
 			}
-			logger.Init()
 			log = logger.Logger()
 		},
 	}

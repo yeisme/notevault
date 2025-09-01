@@ -45,6 +45,7 @@ package configs
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
@@ -83,6 +84,17 @@ func InitConfig(path string) error {
 		appViper.SetConfigName("config")
 		appViper.AddConfigPath(path)
 		appViper.AddConfigPath(path + "/configs")
+
+		exts := []string{"yaml", "yml", "json", "toml", "env", "dotenv"}
+
+		for _, ext := range exts {
+			cfg := filepath.Join(path, "config."+ext)
+			if _, err := os.Stat(cfg); err == nil {
+				appViper.SetConfigFile(cfg)
+
+				break
+			}
+		}
 	}
 
 	appViper.AutomaticEnv()
