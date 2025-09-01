@@ -27,7 +27,7 @@ var (
 
 // InitConfig 加载应用程序配置，支持多种格式(yaml、json、toml、dotenv)并启用热重载
 func InitConfig(path string) error {
-	AppViper := viper.New()
+	AppViper = viper.New()
 
 	AppViper.SetConfigName("config")
 
@@ -92,4 +92,8 @@ func reloadConfigs(v *viper.Viper, isHotReload bool) {
 // GetConfig 返回全局配置实例
 func GetConfig() *AppConfig {
 	return &GlobalConfig
+}
+
+func GetViper() *viper.Viper {
+	return AppViper
 }
