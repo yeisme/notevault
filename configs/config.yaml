@@ -1,0 +1,13 @@
+# NoteVault 应用程序配置示例
+# 支持格式: yaml, json, toml, dotenv
+
+# 服务器配置
+server:
+  port: 8080
+  host: "0.0.0.0"
+  log_level: "info"
+  reload_config: true
+  debug: true
+  timeout: 30
+  read_timeout: 10
+  write_timeout: 10
