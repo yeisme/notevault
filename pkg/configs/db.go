@@ -11,21 +11,32 @@ type (
 )
 
 const (
-	// PostgreSQL 协议
+	// PostgreSQL 协议.
 	PostgreSQL DBType = "postgresql"
 	Postgres   DBType = "postgre"
 	Pg         DBType = "pg"
 
-	// MySQL 协议
+	// MySQL 协议.
 	MySQL   DBType = "mysql"
 	MariaDB DBType = "mariadb"
-	// SQLite 协议
+	// SQLite 协议.
 	SQLite DBType = "sqlite"
-	// DuckDB 协议
+	// DuckDB 协议.
 	DuckDB DBType = "duckdb"
 )
 
-// DBConfig 数据库配置
+const (
+	DatabaseHost        = "localhost" // 数据库主机
+	DatabasePort        = 5432        // 数据库端口
+	DatabaseUser        = "postgres"  // 数据库用户
+	DatabasePassword    = ""          // 数据库密码
+	DatabaseName        = "notevault" // 数据库名称
+	DatabaseSSLMode     = "disable"   // 数据库SSL模式
+	DefaultMaxOpenConns = 10          // 默认最大打开连接数
+	DefaultMaxIdleConns = 5           // 默认最大空闲连接数
+)
+
+// DBConfig 数据库配置.
 type DBConfig struct {
 	Type         DBType `mapstructure:"type"`
 	Host         string `mapstructure:"host"`
@@ -38,19 +49,7 @@ type DBConfig struct {
 	MaxIdleConns int    `mapstructure:"max_idle_conns"`
 }
 
-// setDefaults 设置数据库配置的默认值
-func (c *DBConfig) setDefaults(v *viper.Viper) {
-	v.SetDefault("database.type", PostgreSQL)
-	v.SetDefault("database.host", "localhost")
-	v.SetDefault("database.port", 5432)
-	v.SetDefault("database.user", "postgres")
-	v.SetDefault("database.password", "")
-	v.SetDefault("database.database", "notevault")
-	v.SetDefault("database.sslmode", "disable")
-	v.SetDefault("database.max_open_conns", 10)
-	v.SetDefault("database.max_idle_conns", 5)
-}
-
+// GetDBType 返回数据库类型的字符串表示.
 func (c *DBConfig) GetDBType() string {
 	switch c.Type {
 	case PostgreSQL, Postgres, Pg:
@@ -67,7 +66,7 @@ func (c *DBConfig) GetDBType() string {
 }
 
 // GetDSN 获取数据库的连接字符串，根据不同的数据库类型返回不同格式的DSN
-// 通过构建 dsnMap 映射表来简化代码结构和提高可维护性 (优先使用)
+// 通过构建 dsnMap 映射表来简化代码结构和提高可维护性 (优先使用).
 func (c *DBConfig) GetDSN() string {
 	var dsnMap = map[DBType]func() string{
 		PostgreSQL: c.GetPgSQLDSN,
@@ -82,27 +81,42 @@ func (c *DBConfig) GetDSN() string {
 	if fn, ok := dsnMap[c.Type]; ok {
 		return fn()
 	}
+
 	return ""
 }
 
-// GetPgSQLDSN 获取PostgreSQL的DSN
+// GetPgSQLDSN 获取PostgreSQL的DSN.
 func (c *DBConfig) GetPgSQLDSN() string {
 	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
 		c.Host, c.Port, c.User, c.Password, c.Database, c.SSLMode)
 }
 
-// GetMySQLDSN 获取MySQL的DSN
+// GetMySQLDSN 获取MySQL的DSN.
 func (c *DBConfig) GetMySQLDSN() string {
 	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 		c.User, c.Password, c.Host, c.Port, c.Database)
 }
 
-// GetSQLiteDSN 获取SQLite的DSN
+// GetSQLiteDSN 获取SQLite的DSN.
 func (c *DBConfig) GetSQLiteDSN() string {
-	return fmt.Sprintf("file:%s", c.Database)
+	return fmt.Sprintf("file:%s.db", c.Database)
 }
 
-// GetDuckDBDSN 获取DuckDB的DSN
+// GetDuckDBDSN 获取DuckDB的DSN.
+// DuckDB 使用文件路径作为DSN，例如 file:database.db.
 func (c *DBConfig) GetDuckDBDSN() string {
-	return fmt.Sprintf("file:%s", c.Database)
+	return fmt.Sprintf("file:%s.db", c.Database)
+}
+
+// setDefaults 设置数据库配置的默认值.
+func (c *DBConfig) setDefaults(v *viper.Viper) {
+	v.SetDefault("database.type", PostgreSQL)
+	v.SetDefault("database.host", DatabaseHost)
+	v.SetDefault("database.port", DatabasePort)
+	v.SetDefault("database.user", DatabaseUser)
+	v.SetDefault("database.password", DatabasePassword)
+	v.SetDefault("database.database", DatabaseName)
+	v.SetDefault("database.sslmode", DatabaseSSLMode)
+	v.SetDefault("database.max_open_conns", DefaultMaxOpenConns)
+	v.SetDefault("database.max_idle_conns", DefaultMaxIdleConns)
 }

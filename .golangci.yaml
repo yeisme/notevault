@@ -1,0 +1,6 @@
+version: "2"
+
+linters:
+  default: fast
+  disable:
+    - depguard

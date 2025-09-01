@@ -1,3 +1,4 @@
+// Package main 启动应用程序
 package main
 
 import "github.com/yeisme/notevault/pkg/cmd"

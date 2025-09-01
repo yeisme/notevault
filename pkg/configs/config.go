@@ -9,7 +9,7 @@ import (
 )
 
 type (
-	// AppConfig 全局应用程序配置
+	// AppConfig 全局应用程序配置.
 	AppConfig struct {
 		DB     DBConfig     `mapstructure:"db"`
 		S3     S3Config     `mapstructure:"s3"`     // S3Config 对象存储配置
@@ -19,13 +19,13 @@ type (
 )
 
 var (
-	// GlobalConfig 全局配置实例
+	// GlobalConfig 全局配置实例.
 	GlobalConfig AppConfig
-	// AppViper 全局 Viper 实例
+	// AppViper 全局 Viper 实例.
 	AppViper *viper.Viper
 )
 
-// InitConfig 加载应用程序配置，支持多种格式(yaml、json、toml、dotenv)并启用热重载
+// InitConfig 加载应用程序配置，支持多种格式(yaml、json、toml、dotenv)并启用热重载.
 func InitConfig(path string) error {
 	AppViper = viper.New()
 
@@ -61,11 +61,14 @@ func InitConfig(path string) error {
 	return nil
 }
 
-// setAllDefaults 设置所有配置的默认值
+// setAllDefaults 设置所有配置的默认值.
 func setAllDefaults(v *viper.Viper) {
 	var serverConfig ServerConfig
+
 	var dbConfig DBConfig
+
 	var s3Config S3Config
+
 	var mqConfig MQConfig
 
 	serverConfig.setDefaults(v)
@@ -82,6 +85,7 @@ func reloadConfigs(v *viper.Viper, isHotReload bool) {
 	v.OnConfigChange(func(e fsnotify.Event) {
 		fmt.Println("Config file changed:", e.Name)
 		fmt.Println("Reloading configuration...")
+
 		if err := v.Unmarshal(&GlobalConfig); err != nil {
 			fmt.Printf("Error reloading config: %v\n", err)
 		}
@@ -89,7 +93,7 @@ func reloadConfigs(v *viper.Viper, isHotReload bool) {
 	v.WatchConfig()
 }
 
-// GetConfig 返回全局配置实例
+// GetConfig 返回全局配置实例.
 func GetConfig() *AppConfig {
 	return &GlobalConfig
 }
