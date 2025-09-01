@@ -12,13 +12,13 @@ var (
 	// config 子命令.
 	configCmd = &cobra.Command{
 		Use:   "config",
-		Short: "配置相关命令",
+		Short: "config subcommands",
 	}
 
 	// 打印当前使用的配置文件路径.
 	pathCmd = &cobra.Command{
 		Use:   "path",
-		Short: "打印当前使用的配置文件路径",
+		Short: "print the path of the current config file",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := configs.GetViper()
 			if v == nil {
@@ -43,7 +43,7 @@ var (
 	// 调用 viper 的 Debug 输出.
 	debugCmd = &cobra.Command{
 		Use:   "debug",
-		Short: "Debug 输出当前 viper 配置",
+		Short: "print the current config values",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := configs.GetViper()
 			c := configs.GetConfig()
