@@ -58,7 +58,7 @@ func Init() {
 
 	ctx := zerolog.New(output).With()
 	if ctg.Server.Debug {
-		ctx = ctx.Caller()
+		ctx = ctx.Caller().Stack()
 	}
 
 	logger = ctx.Timestamp().Logger()

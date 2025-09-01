@@ -5,16 +5,21 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 	"github.com/yeisme/notevault/pkg/configs"
+	logger "github.com/yeisme/notevault/pkg/log"
 )
 
 var (
+	log zerolog.Logger
+
 	rootCmd = &cobra.Command{
 		Use:   "notevault",
 		Short: "A command line tool for managing notes",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// 这里可以添加应用程序的主要逻辑
+			log.Info().Msg("Notevault is running...")
 
 			return nil
 		},
@@ -24,6 +29,8 @@ var (
 				fmt.Printf("Error initializing config: %v\n", err)
 				os.Exit(1)
 			}
+			logger.Init()
+			log = logger.Logger()
 		},
 	}
 )
