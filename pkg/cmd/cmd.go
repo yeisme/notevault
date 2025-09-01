@@ -35,6 +35,9 @@ var (
 func Execute() error {
 	setupFlags()
 
+	// 注册子命令
+	registerConfigsCommands()
+
 	return rootCmd.Execute()
 }
 
@@ -51,7 +54,7 @@ var (
 // setupFlags 设置命令行标志并绑定到 viper.
 func setupFlags() {
 	rootCmd.PersistentFlags().StringVarP(
-		&configPath, "config", "c", "", "config file (default discovered in current directory or ./configs)")
+		&configPath, "config", "c", ".", "config file (default discovered in current directory or ./configs)")
 
 	// ServerConfig 相关标志
 	rootCmd.PersistentFlags().IntVarP(

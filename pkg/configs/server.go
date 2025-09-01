@@ -34,10 +34,10 @@ func (s *ServerConfig) GetTimeoutDuration() time.Duration {
 
 // setDefaults 设置服务器配置的默认值.
 func (s *ServerConfig) setDefaults(v *viper.Viper) {
-	v.SetDefault("port", DefaultPort)
-	v.SetDefault("host", DefaultHost)
-	v.SetDefault("log_level", DefaultLogLevel)
-	v.SetDefault("reload_config", DefaultReloadConfig)
-	v.SetDefault("debug", DefaultDebug)
-	v.SetDefault("timeout", DefaultTimeout)
+	v.SetDefault("server.port", DefaultPort)
+	v.SetDefault("server.host", DefaultHost)
+	v.SetDefault("server.log_level", DefaultLogLevel)
+	v.SetDefault("server.reload_config", DefaultReloadConfig)
+	v.SetDefault("server.debug", DefaultDebug)
+	v.SetDefault("server.timeout", DefaultTimeout)
 }
