@@ -57,48 +57,48 @@ type (
 		S3     S3Config     `mapstructure:"s3"`     // S3Config 对象存储配置
 		MQ     MQConfig     `mapstructure:"mq"`     // MQConfig 消息队列配置
 		Server ServerConfig `mapstructure:"server"` // ServerConfig 其它服务器配置，日志级别、服务器端口等
+		Log    LogConfig    `mapstructure:"log"`    // LogConfig 日志相关配置
 	}
 )
 
 var (
-	// GlobalConfig 全局配置实例.
-	GlobalConfig AppConfig
-	// AppViper 全局 Viper 实例.
-	AppViper *viper.Viper
+	// globalConfig 全局配置实例.
+	globalConfig AppConfig
+	// appViper 全局 Viper 实例.
+	appViper *viper.Viper
 )
 
 // InitConfig 加载应用程序配置，支持多种格式(yaml、json、toml、dotenv)并启用热重载.
 func InitConfig(path string) error {
-	AppViper = viper.New()
+	appViper = viper.New()
+	// 设置默认值
+	setAllDefaults(appViper)
 
 	// 检查path是否是文件
 	if info, err := os.Stat(path); err == nil && !info.IsDir() {
 		// 是文件，使用SetConfigFile，Viper会自动检测类型
-		AppViper.SetConfigFile(path)
+		appViper.SetConfigFile(path)
 	} else {
 		// 是目录，设置配置名和路径
-		AppViper.SetConfigName("config")
-		AppViper.AddConfigPath(path)
-		AppViper.AddConfigPath(path + "/configs")
+		appViper.SetConfigName("config")
+		appViper.AddConfigPath(path)
+		appViper.AddConfigPath(path + "/configs")
 	}
 
-	AppViper.AutomaticEnv()
-	AppViper.SetEnvPrefix("NOTEVAULT")
-
-	// 设置默认值
-	setAllDefaults(AppViper)
+	appViper.AutomaticEnv()
+	appViper.SetEnvPrefix("NOTEVAULT")
 
 	// 读取配置
-	if err := AppViper.ReadInConfig(); err != nil {
+	if err := appViper.ReadInConfig(); err != nil {
 		return fmt.Errorf("failed to read config: %w", err)
 	}
 
 	// 解析到全局配置
-	if err := AppViper.Unmarshal(&GlobalConfig); err != nil {
+	if err := appViper.Unmarshal(&globalConfig); err != nil {
 		return fmt.Errorf("failed to unmarshal config: %w", err)
 	}
 
-	reloadConfigs(AppViper, GlobalConfig.Server.ReloadConfig)
+	reloadConfigs(appViper, globalConfig.Server.ReloadConfig)
 
 	return nil
 }
@@ -113,10 +113,13 @@ func setAllDefaults(v *viper.Viper) {
 
 	var mqConfig MQConfig
 
+	var logConfig LogConfig
+
 	serverConfig.setDefaults(v)
 	dbConfig.setDefaults(v)
 	s3Config.setDefaults(v)
 	mqConfig.setDefaults(v)
+	logConfig.setDefaults(v)
 }
 
 func reloadConfigs(v *viper.Viper, isHotReload bool) {
@@ -128,7 +131,7 @@ func reloadConfigs(v *viper.Viper, isHotReload bool) {
 		fmt.Println("Config file changed:", e.Name)
 		fmt.Println("Reloading configuration...")
 
-		if err := v.Unmarshal(&GlobalConfig); err != nil {
+		if err := v.Unmarshal(&globalConfig); err != nil {
 			fmt.Printf("Error reloading config: %v\n", err)
 		}
 	})
@@ -137,9 +140,9 @@ func reloadConfigs(v *viper.Viper, isHotReload bool) {
 
 // GetConfig 返回全局配置实例.
 func GetConfig() *AppConfig {
-	return &GlobalConfig
+	return &globalConfig
 }
 
 func GetViper() *viper.Viper {
-	return AppViper
+	return appViper
 }

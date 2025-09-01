@@ -24,17 +24,16 @@ var (
 				fmt.Printf("Error initializing config: %v\n", err)
 				os.Exit(1)
 			}
-
-			// 绑定命令行标志到 AppViper
-			bindFlagsToViper(cmd)
 		},
 	}
 )
 
 // Execute runs the root command.
 func Execute() error {
+	// 设置持久化全局命令行标志
 	setupFlags()
-
+	// 绑定命令行标志到 AppViper
+	bindFlagsToViper(rootCmd)
 	// 注册子命令
 	registerConfigsCommands()
 
