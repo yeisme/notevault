@@ -26,14 +26,14 @@ const (
 )
 
 const (
-	DatabaseHost        = "localhost" // 数据库主机
-	DatabasePort        = 5432        // 数据库端口
-	DatabaseUser        = "postgres"  // 数据库用户
-	DatabasePassword    = ""          // 数据库密码
-	DatabaseName        = "notevault" // 数据库名称
-	DatabaseSSLMode     = "disable"   // 数据库SSL模式
-	DefaultMaxOpenConns = 10          // 默认最大打开连接数
-	DefaultMaxIdleConns = 5           // 默认最大空闲连接数
+	DefaultDatabaseHost     = "localhost" // 默认数据库主机
+	DefaultDatabasePort     = 5432        // 默认数据库端口
+	DefaultDatabaseUser     = "postgres"  // 默认数据库用户
+	DefaultDatabasePassword = ""          // 默认数据库密码
+	DefaultDatabaseName     = "notevault" // 默认数据库名称
+	DefaultDatabaseSSLMode  = "disable"   // 默认数据库SSL模式
+	DefaultMaxOpenConns     = 10          // 默认最大打开连接数
+	DefaultMaxIdleConns     = 5           // 默认最大空闲连接数
 )
 
 // DBConfig 数据库配置.
@@ -111,12 +111,12 @@ func (c *DBConfig) GetDuckDBDSN() string {
 // setDefaults 设置数据库配置的默认值.
 func (c *DBConfig) setDefaults(v *viper.Viper) {
 	v.SetDefault("database.type", PostgreSQL)
-	v.SetDefault("database.host", DatabaseHost)
-	v.SetDefault("database.port", DatabasePort)
-	v.SetDefault("database.user", DatabaseUser)
-	v.SetDefault("database.password", DatabasePassword)
-	v.SetDefault("database.database", DatabaseName)
-	v.SetDefault("database.sslmode", DatabaseSSLMode)
+	v.SetDefault("database.host", DefaultDatabaseHost)
+	v.SetDefault("database.port", DefaultDatabasePort)
+	v.SetDefault("database.user", DefaultDatabaseUser)
+	v.SetDefault("database.password", DefaultDatabasePassword)
+	v.SetDefault("database.database", DefaultDatabaseName)
+	v.SetDefault("database.sslmode", DefaultDatabaseSSLMode)
 	v.SetDefault("database.max_open_conns", DefaultMaxOpenConns)
 	v.SetDefault("database.max_idle_conns", DefaultMaxIdleConns)
 }

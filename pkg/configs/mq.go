@@ -10,9 +10,13 @@ type MQType string
 const (
 	MQTypeNATS MQType = "nats"
 
-	// 默认MQ连接配置.
-	DefaultMaxReconnects = 5 //nolint:mnd // 默认最大重连次数.
-	DefaultReconnectWait = 5 //nolint:mnd // 默认重连等待时间（秒）.
+	DefaultMQURL         = "localhost:4222"
+	DefaultMQUser        = ""
+	DefaultMQPassword    = ""
+	DefaultMaxReconnects = 5                   // 默认最大重连次数.
+	DefaultReconnectWait = 5                   // 默认重连等待时间（秒）.
+	DefaultMQClusterID   = "notevault-cluster" // 默认集群ID
+	DefaultMQClientID    = "notevault-app"     // 默认客户端ID
 )
 
 // MQConfig 消息队列配置.
@@ -35,11 +39,11 @@ func (c *MQConfig) GetMQType() MQType {
 // setDefaults 设置MQ配置的默认值.
 func (c *MQConfig) setDefaults(v *viper.Viper) {
 	v.SetDefault("queue.type", MQTypeNATS)
-	v.SetDefault("queue.url", "localhost:4222")
-	v.SetDefault("queue.user", "")
-	v.SetDefault("queue.password", "")
-	v.SetDefault("queue.cluster_id", "notevault-cluster")
-	v.SetDefault("queue.client_id", "notevault-app")
+	v.SetDefault("queue.url", DefaultMQURL)
+	v.SetDefault("queue.user", DefaultMQUser)
+	v.SetDefault("queue.password", DefaultMQPassword)
+	v.SetDefault("queue.cluster_id", DefaultMQClusterID)
+	v.SetDefault("queue.client_id", DefaultMQClientID)
 	v.SetDefault("queue.max_reconnects", DefaultMaxReconnects)
 	v.SetDefault("queue.reconnect_wait", DefaultReconnectWait)
 }

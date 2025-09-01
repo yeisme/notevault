@@ -16,6 +16,15 @@ type S3Config struct {
 	Region          string `mapstructure:"region"`
 }
 
+const (
+	DefaultS3Endpoint        = "localhost:9000" // 默认S3端点
+	DefaultS3AccessKeyID     = "minioadmin"     // 默认访问密钥ID
+	DefaultS3SecretAccessKey = "minioadmin"     // 默认秘密访问密钥
+	DefaultS3UseSSL          = false            // 默认是否使用SSL
+	DefaultS3BucketName      = "notevault"      // 默认存储桶名称
+	DefaultS3Region          = "us-east-1"      // 默认区域
+)
+
 // GetEndpointURL 获取完整的端点URL.
 func (c *S3Config) GetEndpointURL() string {
 	scheme := "http"
@@ -28,10 +37,10 @@ func (c *S3Config) GetEndpointURL() string {
 
 // setDefaults 设置 S3 配置的默认值.
 func (c *S3Config) setDefaults(v *viper.Viper) {
-	v.SetDefault("storage.endpoint", "localhost:9000")
-	v.SetDefault("storage.access_key_id", "minioadmin")
-	v.SetDefault("storage.secret_access_key", "minioadmin")
-	v.SetDefault("storage.use_ssl", false)
-	v.SetDefault("storage.bucket_name", "notevault")
-	v.SetDefault("storage.region", "us-east-1")
+	v.SetDefault("storage.endpoint", DefaultS3Endpoint)
+	v.SetDefault("storage.access_key_id", DefaultS3AccessKeyID)
+	v.SetDefault("storage.secret_access_key", DefaultS3SecretAccessKey)
+	v.SetDefault("storage.use_ssl", DefaultS3UseSSL)
+	v.SetDefault("storage.bucket_name", DefaultS3BucketName)
+	v.SetDefault("storage.region", DefaultS3Region)
 }
