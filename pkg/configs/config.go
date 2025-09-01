@@ -1,8 +1,50 @@
-// Package configs 管理应用程序配置，包括数据库、存储和队列的配置信息。
+// Package configs 管理应用程序配置，包括数据库、存储和队列的配置信息.
+// configs 包支持多种配置格式（YAML、JSON、TOML、dotenv）并启用热重载.
+//
+// Example:
+//
+//	import "path/to/configs"
+//
+//	err := configs.InitConfig("./")
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//
+//	config := configs.GetConfig()
+//	fmt.Println(config.Server.Port)
+//
+// Example accessing DB config:
+//
+//	config := configs.GetConfig()
+//	dbConfig := config.DB
+//	dsn := dbConfig.GetDSN()
+//	fmt.Println("DSN:", dsn)
+//
+// Example accessing S3 config:
+//
+//	config := configs.GetConfig()
+//	s3Config := config.S3
+//	endpoint := s3Config.GetEndpointURL()
+//	fmt.Println("S3 Endpoint:", endpoint)
+//
+// Example accessing MQ config:
+//
+//	config := configs.GetConfig()
+//	mqConfig := config.MQ
+//	mqType := mqConfig.GetMQType()
+//	fmt.Println("MQ Type:", mqType)
+//
+// Example accessing Server config:
+//
+//	config := configs.GetConfig()
+//	serverConfig := config.Server
+//	timeout := serverConfig.GetTimeoutDuration()
+//	fmt.Println("Timeout:", timeout)
 package configs
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
@@ -29,19 +71,19 @@ var (
 func InitConfig(path string) error {
 	AppViper = viper.New()
 
-	AppViper.SetConfigName("config")
-
-	AppViper.SetConfigType("yaml")
-	AppViper.SetConfigType("yml")
-	AppViper.SetConfigType("json")
-	AppViper.SetConfigType("toml")
-	AppViper.SetConfigType("dotenv")
+	// 检查path是否是文件
+	if info, err := os.Stat(path); err == nil && !info.IsDir() {
+		// 是文件，使用SetConfigFile，Viper会自动检测类型
+		AppViper.SetConfigFile(path)
+	} else {
+		// 是目录，设置配置名和路径
+		AppViper.SetConfigName("config")
+		AppViper.AddConfigPath(path)
+		AppViper.AddConfigPath(path + "/configs")
+	}
 
 	AppViper.AutomaticEnv()
 	AppViper.SetEnvPrefix("NOTEVAULT")
-
-	AppViper.AddConfigPath(path)
-	AppViper.AddConfigPath(path + "./configs")
 
 	// 设置默认值
 	setAllDefaults(AppViper)

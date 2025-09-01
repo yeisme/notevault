@@ -11,3 +11,35 @@ server:
   timeout: 30
   read_timeout: 10
   write_timeout: 10
+
+# 数据库配置
+db:
+  type: "postgresql"
+  host: "localhost"
+  port: 5432
+  user: "postgres"
+  password: ""
+  database: "notevault"
+  sslmode: "disable"
+  max_open_conns: 10
+  max_idle_conns: 5
+
+# S3 存储配置
+s3:
+  endpoint: "localhost:9000"
+  access_key_id: "minioadmin"
+  secret_access_key: "minioadmin"
+  use_ssl: false
+  bucket_name: "notevault"
+  region: "us-east-1"
+
+# 消息队列配置
+mq:
+  type: "nats"
+  url: "localhost:4222"
+  user: ""
+  password: ""
+  cluster_id: "notevault-cluster"
+  client_id: "notevault-app"
+  max_reconnects: 5
+  reconnect_wait: 5
