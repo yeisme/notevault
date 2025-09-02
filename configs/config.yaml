@@ -30,7 +30,8 @@ s3:
   access_key_id: "minioadmin"
   secret_access_key: "minioadmin"
   use_ssl: false
-  bucket_name: "notevault"
+  bucket_name:
+    - "notevault"
   region: "us-east-1"
 
 # 消息队列配置

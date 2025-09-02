@@ -12,14 +12,14 @@ import (
 )
 
 var (
-	log zerolog.Logger
+	log *zerolog.Logger
 
 	rootCmd = &cobra.Command{
 		Use:   "notevault",
 		Short: "A command line tool for managing notes",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// 这里可以添加应用程序的主要逻辑
-			log.Info().Msg("Notevault is running...")
+			log.Info().Msg("Notevault is running, config loaded successfully.")
 
 			return nil
 		},
@@ -62,18 +62,12 @@ func setupFlags() {
 		&configPath, "config", "c", ".", "config file (default discovered in current directory or ./configs)")
 
 	// ServerConfig 相关标志
-	rootCmd.PersistentFlags().IntVarP(
-		&port, "port", "p", configs.DefaultPort, "server port")
-	rootCmd.PersistentFlags().StringVarP(
-		&host, "host", "H", configs.DefaultHost, "server host")
-	rootCmd.PersistentFlags().StringVarP(
-		&logLevel, "log-level", "l", configs.DefaultLogLevel, "log level")
-	rootCmd.PersistentFlags().BoolVarP(
-		&reload, "reload-config", "r", configs.DefaultReloadConfig, "enable config hot reload")
-	rootCmd.PersistentFlags().BoolVarP(
-		&debug, "debug", "d", configs.DefaultDebug, "enable debug mode")
-	rootCmd.PersistentFlags().IntVarP(
-		&timeout, "timeout", "t", configs.DefaultTimeout, "timeout in seconds")
+	rootCmd.PersistentFlags().IntVarP(&port, "port", "p", configs.DefaultPort, "server port")
+	rootCmd.PersistentFlags().StringVarP(&host, "host", "H", configs.DefaultHost, "server host")
+	rootCmd.PersistentFlags().StringVarP(&logLevel, "log-level", "l", configs.DefaultLogLevel, "log level")
+	rootCmd.PersistentFlags().BoolVarP(&reload, "reload-config", "r", configs.DefaultReloadConfig, "enable config hot reload")
+	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", configs.DefaultDebug, "enable debug mode")
+	rootCmd.PersistentFlags().IntVarP(&timeout, "timeout", "t", configs.DefaultTimeout, "timeout in seconds")
 }
 
 // bindFlagsToViper 将命令行标志绑定到 AppViper.

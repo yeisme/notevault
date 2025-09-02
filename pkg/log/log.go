@@ -1,4 +1,4 @@
-// Package log 提供基于 zerolog 的日志工具，支持 stdout/stderr 和文件输出（lumberjack 轮转）。
+// Package log 提供基于 zerolog 的日志工具，支持 stdout/stderr 和文件输出（lumberjack 轮转）.
 package log
 
 import (
@@ -25,7 +25,7 @@ func Init() {
 	initOnce.Do(initLogger)
 }
 
-// initLogger 实际执行一次的初始化函数。
+// initLogger 实际执行一次的初始化函数.
 func initLogger() {
 	ctg := configs.GetConfig()
 	logCfg := ctg.Log
@@ -74,9 +74,9 @@ func initLogger() {
 }
 
 // Logger 返回全局 logger.
-func Logger() zerolog.Logger {
+func Logger() *zerolog.Logger {
 	// ensure logger is initialized on first use
 	initOnce.Do(initLogger)
 
-	return logger
+	return &logger
 }
