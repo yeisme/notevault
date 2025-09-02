@@ -54,7 +54,7 @@ import (
 type (
 	// AppConfig 全局应用程序配置.
 	AppConfig struct {
-		DB     DBConfig     `mapstructure:"db"`
+		DB     DBConfig     `mapstructure:"db"`     // DBConfig 数据库配置
 		S3     S3Config     `mapstructure:"s3"`     // S3Config 对象存储配置
 		MQ     MQConfig     `mapstructure:"mq"`     // MQConfig 消息队列配置
 		Server ServerConfig `mapstructure:"server"` // ServerConfig 其它服务器配置，日志级别、服务器端口等

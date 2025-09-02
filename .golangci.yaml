@@ -4,3 +4,24 @@ linters:
   default: fast
   disable:
     - depguard
+    - wsl
+  enable:
+    - wsl_v5
+    - tagalign
+    - errcheck
+
+  settings:
+    wsl_v5:
+      allow-first-in-block: true
+      allow-whole-block: false
+      branch-max-lines: 2
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+      disable-default-exclusions: false
+      verbose: true
+      exclude-functions:
+        - fmt.Fprint
+        - fmt.Fprintln
+        - fmt.Fprintf
+        - (*github.com/spf13/viper.Viper).BindPFlag
