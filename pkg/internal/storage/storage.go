@@ -5,16 +5,16 @@
 // 初始化
 //
 //	 ctx := context.Background()
-//	 ctx, err := storage.Init(ctx)
+//	 mgr, err := storage.Init(ctx)
 //
 //		if err != nil {
 //		    // 处理错误
 //		}
 //
-// 获取 s3 客户端
+// 获取存储客户端
 //
-//	mgr := storage.GetFromContext(ctx)
-//	s3Client := storage.GetS3ClientFromContext(ctx)
+//	s3Client := mgr.GetS3Client()
+//	dbClient := mgr.GetDBClient()
 package storage
 
 import (
@@ -22,6 +22,7 @@ import (
 	"sync"
 
 	"github.com/yeisme/notevault/pkg/configs"
+	dbc "github.com/yeisme/notevault/pkg/internal/storage/db"
 	s3c "github.com/yeisme/notevault/pkg/internal/storage/s3"
 	nlog "github.com/yeisme/notevault/pkg/log"
 )
@@ -29,6 +30,7 @@ import (
 // Manager 聚合所有存储资源.
 type Manager struct {
 	S3 *s3c.Client
+	DB *dbc.Client
 }
 
 var (
@@ -43,6 +45,13 @@ func Init(ctx context.Context) (*Manager, error) {
 	mgrOnce.Do(func() {
 		cfg := configs.GetConfig()
 		m := &Manager{}
+
+		// DB
+		if dbi, e := dbc.New(ctx, &cfg.DB); e != nil {
+			err = e
+		} else {
+			m.DB = dbi
+		}
 
 		// S3
 		if s3i, e := s3c.New(ctx, &cfg.S3); e != nil {
@@ -61,11 +70,12 @@ func Init(ctx context.Context) (*Manager, error) {
 	return mgr, err
 }
 
-// Close 释放资源.
-func (m *Manager) Close() {
-	if m == nil {
-		return
-	}
+// GetS3Client 获取 S3 客户端.
+func (m *Manager) GetS3Client() *s3c.Client {
+	return m.S3
+}
 
-	// S3 客户端目前无需显式关闭
+// GetDBClient 获取 DB 客户端.
+func (m *Manager) GetDBClient() *dbc.Client {
+	return m.DB
 }

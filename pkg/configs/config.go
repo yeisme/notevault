@@ -49,6 +49,7 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
+
 	"github.com/yeisme/notevault/pkg/rule"
 )
 
@@ -103,7 +104,10 @@ func InitConfig(path string) error {
 
 	// 读取配置
 	if err := appViper.ReadInConfig(); err != nil {
-		return fmt.Errorf("failed to read config: %w", err)
+		// 如果失败，使用默认值（已经设置）
+	} else {
+		// 如果成功，重新设置默认值根据读取的值
+		setAllDefaults(appViper)
 	}
 
 	// 解析到全局配置

@@ -7,6 +7,7 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
+
 	"github.com/yeisme/notevault/pkg/configs"
 	logger "github.com/yeisme/notevault/pkg/log"
 )

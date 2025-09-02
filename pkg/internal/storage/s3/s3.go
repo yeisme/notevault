@@ -8,6 +8,7 @@ import (
 
 	minio "github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
+
 	"github.com/yeisme/notevault/pkg/configs"
 	nlog "github.com/yeisme/notevault/pkg/log"
 )

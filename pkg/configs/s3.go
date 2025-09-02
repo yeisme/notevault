@@ -21,7 +21,7 @@ type S3Config struct {
 	AccessKeyID     string   `mapstructure:"access_key_id"`
 	SecretAccessKey string   `mapstructure:"secret_access_key"`
 	UseSSL          bool     `mapstructure:"use_ssl"`
-	Buckets         []string `mapstructure:"buckets"`     // 支持多个 bucket
+	Buckets         []string `mapstructure:"buckets"` // 支持多个 bucket
 	Region          string   `mapstructure:"region"`
 }
 
@@ -34,7 +34,6 @@ func (c *S3Config) GetEndpointURL() string {
 
 	return fmt.Sprintf("%s://%s", scheme, c.Endpoint)
 }
-
 
 // setDefaults 设置 S3 配置的默认值.
 func (c *S3Config) setDefaults(v *viper.Viper) {

@@ -5,10 +5,12 @@ linters:
   disable:
     - depguard
     - wsl
+    - nlreturn
   enable:
     - wsl_v5
     - tagalign
     - errcheck
+    - iface
 
   settings:
     wsl_v5:
@@ -28,3 +30,29 @@ linters:
     lll:
       tab-width: 4
       line-length: 160
+    iface:
+      enable:
+        - identical
+        - unused
+        - unexported
+    funlen:
+      lines: 120
+      statements: 40
+      ignore-comments: true
+
+formatters:
+  enable:
+    - gci
+    - swaggo
+    - gofmt
+  settings:
+    gci:
+      sections:
+        - standard # 标准部分：捕获所有标准包
+        - default # 默认部分：包含所有无法匹配到其他部分类型的导入
+        - prefix(github.com/yeisme/notevault) # 自定义部分：将所有具有指定前缀的导入分组
+    gofmt:
+      simplify: false
+      rewrite-rules:
+        - pattern: "interface{}"
+          replacement: "any"
