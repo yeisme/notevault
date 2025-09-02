@@ -21,14 +21,14 @@ const (
 
 // MQConfig 消息队列配置.
 type MQConfig struct {
-	Type          MQType `mapstructure:"type"`
-	URL           string `mapstructure:"url"`
+	Type          MQType `mapstructure:"type"           rule:"oneof=nats"`
+	URL           string `mapstructure:"url"            rule:"hostname_port"`
 	User          string `mapstructure:"user"`
 	Password      string `mapstructure:"password"`
 	ClusterID     string `mapstructure:"cluster_id"`
 	ClientID      string `mapstructure:"client_id"`
-	MaxReconnects int    `mapstructure:"max_reconnects"`
-	ReconnectWait int    `mapstructure:"reconnect_wait"`
+	MaxReconnects int    `mapstructure:"max_reconnects" rule:"min=0,max=100"`
+	ReconnectWait int    `mapstructure:"reconnect_wait" rule:"min=1,max=300"`
 }
 
 // GetMQType 返回当前配置的消息队列类型.

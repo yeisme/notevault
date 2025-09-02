@@ -25,3 +25,6 @@ linters:
         - fmt.Fprintln
         - fmt.Fprintf
         - (*github.com/spf13/viper.Viper).BindPFlag
+    lll:
+      tab-width: 4
+      line-length: 160

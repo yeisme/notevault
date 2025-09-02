@@ -18,12 +18,12 @@ type (
 	// LogConfig 日志相关配置.
 	LogConfig struct {
 		EnableFile bool   `mapstructure:"enable_file"`
-		FilePath   string `mapstructure:"file_path"`
-		MaxSize    int    `mapstructure:"max_size_mb"`
-		MaxBackups int    `mapstructure:"max_backups"`
-		MaxAge     int    `mapstructure:"max_age_days"`
+		FilePath   string `mapstructure:"file_path"    rule:"required_if=EnableFile true"`
+		MaxSize    int    `mapstructure:"max_size_mb"  rule:"min=1,max=1000"`
+		MaxBackups int    `mapstructure:"max_backups"  rule:"min=1,max=100"`
+		MaxAge     int    `mapstructure:"max_age_days" rule:"min=1,max=365"`
 		Compress   bool   `mapstructure:"compress"`
-		Level      string `mapstructure:"level"`
+		Level      string `mapstructure:"level"        rule:"required,oneof=debug info warn error fatal"`
 	}
 )
 

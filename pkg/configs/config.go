@@ -49,6 +49,7 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
+	"github.com/yeisme/notevault/pkg/rule"
 )
 
 type (
@@ -110,6 +111,11 @@ func InitConfig(path string) error {
 		return fmt.Errorf("failed to unmarshal config: %w", err)
 	}
 
+	// 验证配置
+	if err := rule.ValidateStruct(&globalConfig); err != nil {
+		return fmt.Errorf("failed to validate config:\n %w", err)
+	}
+
 	reloadConfigs(appViper, globalConfig.Server.ReloadConfig)
 
 	return nil
@@ -144,8 +150,19 @@ func reloadConfigs(v *viper.Viper, isHotReload bool) {
 		fmt.Println("Reloading configuration...")
 
 		if err := v.Unmarshal(&globalConfig); err != nil {
-			fmt.Printf("Error reloading config: %v\n", err)
+			fmt.Printf("Error reloading config:\n %v\n", err)
+
+			return
 		}
+
+		// 验证重新加载的配置
+		if err := rule.ValidateStruct(&globalConfig); err != nil {
+			fmt.Printf("Error validating reloaded config:\n %v\n", err)
+
+			return
+		}
+
+		fmt.Println("Configuration reloaded successfully")
 	})
 	v.WatchConfig()
 }

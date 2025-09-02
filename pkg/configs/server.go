@@ -17,11 +17,11 @@ const (
 type (
 	// ServerConfig 服务器配置.
 	ServerConfig struct {
-		Port         int    `mapstructure:"port"`
-		Host         string `mapstructure:"host"`
+		Port         int    `mapstructure:"port"          rule:"min=1,max=65535"`
+		Host         string `mapstructure:"host"          rule:"ip"`
 		ReloadConfig bool   `mapstructure:"reload_config"`
 		Debug        bool   `mapstructure:"debug"`
-		Timeout      int    `mapstructure:"timeout"`
+		Timeout      int    `mapstructure:"timeout"       rule:"min=1,max=300"`
 	}
 )
 

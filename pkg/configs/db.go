@@ -38,15 +38,15 @@ const (
 
 // DBConfig 数据库配置.
 type DBConfig struct {
-	Type         DBType `mapstructure:"type"`
-	Host         string `mapstructure:"host"`
-	Port         int    `mapstructure:"port"`
+	Type         DBType `mapstructure:"type"           rule:"oneof=postgresql postgre pg mysql mariadb sqlite duckdb"`
+	Host         string `mapstructure:"host"           rule:"hostname"`
+	Port         int    `mapstructure:"port"           rule:"min=1,max=65535"`
 	User         string `mapstructure:"user"`
 	Password     string `mapstructure:"password"`
 	Database     string `mapstructure:"database"`
 	SSLMode      string `mapstructure:"sslmode"`
-	MaxOpenConns int    `mapstructure:"max_open_conns"`
-	MaxIdleConns int    `mapstructure:"max_idle_conns"`
+	MaxOpenConns int    `mapstructure:"max_open_conns" rule:"min=1"`
+	MaxIdleConns int    `mapstructure:"max_idle_conns" rule:"min=0"`
 }
 
 // GetDBType 返回数据库类型的字符串表示.
