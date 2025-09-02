@@ -29,8 +29,8 @@ import (
 
 // Manager 聚合所有存储资源.
 type Manager struct {
-	S3 *s3c.Client
-	DB *dbc.Client
+	s3 *s3c.Client
+	db *dbc.Client
 }
 
 var (
@@ -50,7 +50,7 @@ func Init(ctx context.Context) (*Manager, error) {
 		if dbi, e := dbc.New(ctx, &cfg.DB); e != nil {
 			err = e
 		} else {
-			m.DB = dbi
+			m.db = dbi
 		}
 
 		// S3
@@ -59,7 +59,7 @@ func Init(ctx context.Context) (*Manager, error) {
 
 			return
 		} else {
-			m.S3 = s3i
+			m.s3 = s3i
 		}
 
 		mgr = m
@@ -72,10 +72,10 @@ func Init(ctx context.Context) (*Manager, error) {
 
 // GetS3Client 获取 S3 客户端.
 func (m *Manager) GetS3Client() *s3c.Client {
-	return m.S3
+	return m.s3
 }
 
 // GetDBClient 获取 DB 客户端.
 func (m *Manager) GetDBClient() *dbc.Client {
-	return m.DB
+	return m.db
 }
