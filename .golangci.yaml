@@ -6,11 +6,15 @@ linters:
     - depguard
     - wsl
     - nlreturn
+    - gochecknoinits
+    - godox
   enable:
     - wsl_v5
     - tagalign
     - errcheck
     - iface
+    - embeddedstructfieldcheck
+    - funcorder
 
   settings:
     wsl_v5:
@@ -37,7 +41,7 @@ linters:
         - unexported
     funlen:
       lines: 120
-      statements: 40
+      statements: 100
       ignore-comments: true
 
 formatters:

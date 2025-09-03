@@ -4,6 +4,7 @@ package context
 import (
 	"context"
 
+	mqc "github.com/yeisme/notevault/pkg/internal/mq"
 	"github.com/yeisme/notevault/pkg/internal/storage"
 	dbc "github.com/yeisme/notevault/pkg/internal/storage/db"
 	s3c "github.com/yeisme/notevault/pkg/internal/storage/s3"
@@ -20,8 +21,8 @@ func WithStorageManager(ctx context.Context, mgr *storage.Manager) context.Conte
 	return context.WithValue(ctx, StorageManagerKey, mgr)
 }
 
-// GetManagerFromContext 从 context 中获取 Manager.
-func GetManagerFromContext(ctx context.Context) *storage.Manager {
+// GetManager 从 context 中获取 Manager.
+func GetManager(ctx context.Context) *storage.Manager {
 	if mgr, ok := ctx.Value(StorageManagerKey).(*storage.Manager); ok {
 		return mgr
 	}
@@ -29,18 +30,28 @@ func GetManagerFromContext(ctx context.Context) *storage.Manager {
 	return nil
 }
 
-// GetS3ClientFromContext 从 context 中获取 S3 客户端.
-func GetS3ClientFromContext(ctx context.Context) *s3c.Client {
-	if mgr := GetManagerFromContext(ctx); mgr != nil {
+// GetS3Client 从 context 中获取 S3 客户端.
+func GetS3Client(ctx context.Context) *s3c.Client {
+	if mgr := GetManager(ctx); mgr != nil {
 		return mgr.GetS3Client()
 	}
 
 	return nil
 }
 
-func GetDBClientFromContext(ctx context.Context) *dbc.Client {
-	if mgr := GetManagerFromContext(ctx); mgr != nil {
+// GetDBClient 从 context 中获取 DB 客户端.
+func GetDBClient(ctx context.Context) *dbc.Client {
+	if mgr := GetManager(ctx); mgr != nil {
 		return mgr.GetDBClient()
+	}
+
+	return nil
+}
+
+// GetMQClient 从 context 中获取 MQ 客户端.
+func GetMQClient(ctx context.Context) *mqc.Client {
+	if mgr := GetManager(ctx); mgr != nil {
+		return mgr.GetMQClient()
 	}
 
 	return nil

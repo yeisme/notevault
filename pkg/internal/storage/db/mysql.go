@@ -14,7 +14,7 @@ func createMySQLDialector(dsn string) gorm.Dialector {
 	return mysql.Open(dsn)
 }
 
-// RegisterMySQLDialector 注册MySQL dialector工厂函数.
-func RegisterMySQLDialector() {
+// 注册MySQL dialector工厂函数.
+func init() {
 	RegisterDialectorFactory(configs.MySQL, createMySQLDialector)
 }

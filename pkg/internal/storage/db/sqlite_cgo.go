@@ -14,7 +14,7 @@ func createSQLiteDialector(dsn string) gorm.Dialector {
 	return sqlite.Open(dsn)
 }
 
-// RegisterSQLiteDialector 注册SQLite dialector工厂函数 (CGo版本).
-func RegisterSQLiteDialector() {
+// 注册SQLite dialector工厂函数 (CGo版本).
+func init() {
 	RegisterDialectorFactory(configs.SQLite, createSQLiteDialector)
 }

@@ -15,6 +15,7 @@
 //
 //	s3Client := mgr.GetS3Client()
 //	dbClient := mgr.GetDBClient()
+//	mqClient := mgr.GetMQClient()
 package storage
 
 import (
@@ -22,6 +23,7 @@ import (
 	"sync"
 
 	"github.com/yeisme/notevault/pkg/configs"
+	mqc "github.com/yeisme/notevault/pkg/internal/mq"
 	dbc "github.com/yeisme/notevault/pkg/internal/storage/db"
 	s3c "github.com/yeisme/notevault/pkg/internal/storage/s3"
 	nlog "github.com/yeisme/notevault/pkg/log"
@@ -31,6 +33,7 @@ import (
 type Manager struct {
 	s3 *s3c.Client
 	db *dbc.Client
+	mq *mqc.Client
 }
 
 var (
@@ -48,18 +51,27 @@ func Init(ctx context.Context) (*Manager, error) {
 
 		// DB
 		if dbi, e := dbc.New(ctx, &cfg.DB); e != nil {
-			err = e
+			nlog.Logger().Error().Err(e).Msg("init db failed")
 		} else {
 			m.db = dbi
 		}
 
 		// S3
 		if s3i, e := s3c.New(ctx, &cfg.S3); e != nil {
-			err = e
+			nlog.Logger().Error().Err(e).Msg("init s3 failed")
 
 			return
 		} else {
 			m.s3 = s3i
+		}
+
+		// MQ
+		if mqMgr, e := mqc.New(ctx); e != nil {
+			nlog.Logger().Error().Err(e).Msg("init mq failed")
+
+			return
+		} else {
+			m.mq = mqMgr
 		}
 
 		mgr = m
@@ -78,4 +90,9 @@ func (m *Manager) GetS3Client() *s3c.Client {
 // GetDBClient 获取 DB 客户端.
 func (m *Manager) GetDBClient() *dbc.Client {
 	return m.db
+}
+
+// GetMQClient 获取 MQ 客户端.
+func (m *Manager) GetMQClient() *mqc.Client {
+	return m.mq
 }

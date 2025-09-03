@@ -14,7 +14,7 @@ func createPostgresDialector(dsn string) gorm.Dialector {
 	return postgres.Open(dsn)
 }
 
-// RegisterPostgresDialector 注册PostgreSQL dialector工厂函数.
-func RegisterPostgresDialector() {
+// 注册PostgreSQL dialector工厂函数.
+func init() {
 	RegisterDialectorFactory(configs.PostgreSQL, createPostgresDialector)
 }
