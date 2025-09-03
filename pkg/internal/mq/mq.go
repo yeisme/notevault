@@ -55,18 +55,18 @@ func RegisterFactory(t configs.MQType, f Factory) {
 
 // Client 封装 watermill Publisher 与 Subscriber.
 type Client struct {
-	Publisher  message.Publisher
-	Subscriber message.Subscriber
+	publisher  message.Publisher
+	subscriber message.Subscriber
 }
 
 // Publish 便捷发布.
 func (c *Client) Publish(ctx context.Context, topic string, msgs ...*message.Message) error {
-	if c == nil || c.Publisher == nil {
+	if c == nil || c.publisher == nil {
 		return fmt.Errorf("mq publisher not initialized")
 	}
 
 	for _, m := range msgs {
-		if err := c.Publisher.Publish(topic, m); err != nil {
+		if err := c.publisher.Publish(topic, m); err != nil {
 			return err
 		}
 	}
@@ -76,11 +76,11 @@ func (c *Client) Publish(ctx context.Context, topic string, msgs ...*message.Mes
 
 // Subscribe 便捷订阅.
 func (c *Client) Subscribe(ctx context.Context, topic string) (<-chan *message.Message, error) {
-	if c == nil || c.Subscriber == nil {
+	if c == nil || c.subscriber == nil {
 		return nil, fmt.Errorf("mq subscriber not initialized")
 	}
 	// 调整调用以匹配签名：只传递 ctx 和 topic
-	ch, err := c.Subscriber.Subscribe(ctx, topic)
+	ch, err := c.subscriber.Subscribe(ctx, topic)
 	if err != nil {
 		return nil, err
 	}
@@ -92,14 +92,14 @@ func (c *Client) Subscribe(ctx context.Context, topic string) (<-chan *message.M
 func (c *Client) Close() error {
 	var err error
 
-	if c.Publisher != nil {
-		if e := c.Publisher.Close(); e != nil {
+	if c.publisher != nil {
+		if e := c.publisher.Close(); e != nil {
 			err = e
 		}
 	}
 
-	if c.Subscriber != nil {
-		if e := c.Subscriber.Close(); e != nil {
+	if c.subscriber != nil {
+		if e := c.subscriber.Close(); e != nil {
 			err = e
 		}
 	}
@@ -132,7 +132,7 @@ func New(ctx context.Context) (*Client, error) {
 			return
 		}
 
-		mqInst = &Client{Publisher: pub, Subscriber: sub}
+		mqInst = &Client{publisher: pub, subscriber: sub}
 
 		nlog.Logger().Info().Str("type", string(cfg.Type)).Msg("MQ 管理器已初始化")
 	})
