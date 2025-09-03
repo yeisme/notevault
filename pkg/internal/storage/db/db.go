@@ -24,6 +24,16 @@ func RegisterDialectorFactory(dbType configs.DBType, factory DialectorFactory) {
 	dialectorFactories[dbType] = factory
 }
 
+// GetRegisteredDBTypes 返回已注册的数据库类型列表.
+func GetRegisteredDBTypes() []configs.DBType {
+	types := make([]configs.DBType, 0, len(dialectorFactories))
+	for dbType := range dialectorFactories {
+		types = append(types, dbType)
+	}
+
+	return types
+}
+
 // DBManager 数据库实例管理器.
 type DBManager struct {
 	instances *Client

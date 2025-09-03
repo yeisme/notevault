@@ -43,6 +43,7 @@ func Execute() error {
 	bindFlagsToViper(rootCmd)
 	// 注册子命令
 	registerConfigsCommands()
+	registerDBCommands()
 
 	return rootCmd.Execute()
 }

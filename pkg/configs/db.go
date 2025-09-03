@@ -32,7 +32,7 @@ const (
 	DefaultDatabasePassword = ""          // 默认数据库密码
 	DefaultDatabaseName     = "notevault" // 默认数据库名称
 	DefaultDatabaseSSLMode  = "disable"   // 默认数据库SSL模式
-	DefaultMaxOpenConns     = 1           // 默认打开连接数至少为1
+	DefaultMaxOpenConns     = 0           // 默认打开连接数0 -> 无限制
 	DefaultMaxIdleConns     = 5           // 默认最大空闲连接数
 )
 
@@ -45,7 +45,7 @@ type DBConfig struct {
 	Password     string `mapstructure:"password"`
 	Database     string `mapstructure:"database"`
 	SSLMode      string `mapstructure:"sslmode"`
-	MaxOpenConns int    `mapstructure:"max_open_conns" rule:"min=1"`
+	MaxOpenConns int    `mapstructure:"max_open_conns" rule:"min=0"`
 	MaxIdleConns int    `mapstructure:"max_idle_conns" rule:"min=0"`
 }
 
