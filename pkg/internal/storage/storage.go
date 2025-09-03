@@ -23,8 +23,8 @@ import (
 	"sync"
 
 	"github.com/yeisme/notevault/pkg/configs"
-	mqc "github.com/yeisme/notevault/pkg/internal/mq"
 	dbc "github.com/yeisme/notevault/pkg/internal/storage/db"
+	mqc "github.com/yeisme/notevault/pkg/internal/storage/mq"
 	s3c "github.com/yeisme/notevault/pkg/internal/storage/s3"
 	nlog "github.com/yeisme/notevault/pkg/log"
 )

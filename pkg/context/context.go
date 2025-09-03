@@ -4,9 +4,9 @@ package context
 import (
 	"context"
 
-	mqc "github.com/yeisme/notevault/pkg/internal/mq"
 	"github.com/yeisme/notevault/pkg/internal/storage"
 	dbc "github.com/yeisme/notevault/pkg/internal/storage/db"
+	mqc "github.com/yeisme/notevault/pkg/internal/storage/mq"
 	s3c "github.com/yeisme/notevault/pkg/internal/storage/s3"
 )
 
