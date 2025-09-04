@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/natefinch/lumberjack"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -67,6 +68,10 @@ func initLogger() {
 	ctx := zerolog.New(output).With()
 	if ctg.Server.Debug {
 		ctx = ctx.Caller().Stack()
+
+		gin.SetMode(gin.DebugMode)
+	} else {
+		gin.SetMode(gin.ReleaseMode)
 	}
 
 	logger = ctx.Timestamp().Logger()
