@@ -7,10 +7,12 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog"
 
 	"github.com/yeisme/notevault/pkg/configs"
 	"github.com/yeisme/notevault/pkg/context"
 	"github.com/yeisme/notevault/pkg/internal/storage"
+	"github.com/yeisme/notevault/pkg/log"
 	"github.com/yeisme/notevault/pkg/metrics"
 	"github.com/yeisme/notevault/pkg/middleware"
 	"github.com/yeisme/notevault/pkg/tracing"
@@ -52,9 +54,12 @@ func NewApp(configPath string) *App {
 
 	context.WithStorageManager(ctx, manager)
 
+	l := log.Logger()
+	gin.DefaultWriter = log.NewGinWriter(l, zerolog.InfoLevel)
+	gin.DefaultErrorWriter = log.NewGinWriter(l, zerolog.ErrorLevel)
+
 	engine.Use(
 		gin.Recovery(),
-		middleware.GinLoggerMiddleware(),
 		middleware.CORSMiddleware(),
 		middleware.TracingMiddleware(),
 		middleware.PrometheusMiddleware(),
@@ -71,5 +76,5 @@ func NewApp(configPath string) *App {
 }
 
 func (a *App) Run() error {
-	return a.Engine.Run(a.config.Server.Host + ":" + string(rune(a.config.Server.Port)))
+	return a.Engine.Run(fmt.Sprintf("%s:%d", a.config.Server.Host, a.config.Server.Port))
 }

@@ -88,16 +88,19 @@ func InitMetrics(config configs.MetricsConfig) error {
 }
 
 // StartMetricsServer 启动Metrics HTTP服务器.
-func StartMetricsServer(config configs.MetricsConfig, debugEngine *gin.Engine) error {
+func StartMetricsServer(config configs.MetricsConfig, engine *gin.Engine) error {
 	if !config.Enabled {
 		return nil
 	}
 
-	debugEngine.GET("/metrics", gin.WrapH(promhttp.HandlerFor(registry, promhttp.HandlerOpts{})))
+	engine.GET("/metrics", gin.WrapH(promhttp.HandlerFor(registry, promhttp.HandlerOpts{})))
 
 	// 如果启用pprof，注册pprof端点
 	if config.Pprof {
-		debugEngine.GET("/debug/pprof/*any", gin.WrapH(http.DefaultServeMux))
+		engine.GET("/debug/pprof/*any", gin.WrapH(http.DefaultServeMux))
+		engine.GET("/debug/", func(c *gin.Context) {
+			c.Redirect(http.StatusFound, "/debug/pprof/")
+		})
 	}
 
 	return nil

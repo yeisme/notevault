@@ -37,11 +37,11 @@ func (c *S3Config) GetEndpointURL() string {
 
 // setDefaults 设置 S3 配置的默认值.
 func (c *S3Config) setDefaults(v *viper.Viper) {
-	v.SetDefault("storage.endpoint", DefaultS3Endpoint)
-	v.SetDefault("storage.access_key_id", DefaultS3AccessKeyID)
-	v.SetDefault("storage.secret_access_key", DefaultS3SecretAccessKey)
-	v.SetDefault("storage.use_ssl", DefaultS3UseSSL)
-	v.SetDefault("storage.bucket_name", DefaultS3BucketName)
-	v.SetDefault("storage.buckets", []string{DefaultS3BucketName})
-	v.SetDefault("storage.region", DefaultS3Region)
+	v.SetDefault("s3.endpoint", DefaultS3Endpoint)
+	v.SetDefault("s3.access_key_id", DefaultS3AccessKeyID)
+	v.SetDefault("s3.secret_access_key", DefaultS3SecretAccessKey)
+	v.SetDefault("s3.use_ssl", DefaultS3UseSSL)
+	v.SetDefault("s3.bucket_name", DefaultS3BucketName)
+	v.SetDefault("s3.buckets", []string{DefaultS3BucketName})
+	v.SetDefault("s3.region", DefaultS3Region)
 }

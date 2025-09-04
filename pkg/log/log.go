@@ -81,3 +81,28 @@ func Logger() *zerolog.Logger {
 
 	return &logger
 }
+
+// GinWriter 把 Gin 文本行转发为 zerolog 事件.
+type GinWriter struct {
+	logger *zerolog.Logger
+	level  zerolog.Level
+}
+
+func NewGinWriter(logger *zerolog.Logger, level zerolog.Level) *GinWriter {
+	return &GinWriter{logger: logger, level: level}
+}
+
+func (w *GinWriter) Write(p []byte) (n int, err error) {
+	msg := strings.TrimSpace(string(p))
+	// 使用指定级别记录（按需可扩展解析 level）
+	switch w.level {
+	case zerolog.ErrorLevel, zerolog.FatalLevel, zerolog.PanicLevel:
+		w.logger.Error().Msg(msg)
+	case zerolog.WarnLevel:
+		w.logger.Warn().Msg(msg)
+	default:
+		w.logger.Info().Msg(msg)
+	}
+
+	return len(p), nil
+}

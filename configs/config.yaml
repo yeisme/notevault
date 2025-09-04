@@ -18,7 +18,7 @@ db:
   host: "localhost"
   port: 5432
   user: "postgres"
-  password: ""
+  password: "postgres"
   database: "notevault"
   sslmode: "disable"
   max_open_conns: 0
@@ -47,13 +47,35 @@ mq:
   reconnect_wait: 5
   enable_metrics: true
 
+# 日志配置
+log:
+  enable_file: true
+  file_path: "logs/notevault.log"
+  max_size_mb: 100
+  max_backups: 7
+  max_age_days: 28
+  compress: true
+  level: "info"
+
+# 分布式追踪配置
+tracing:
+  enabled: false
+  service_name: "notevault"
+  service_version: "1.0.0"
+  exporter_type: "otlp-http"
+  endpoint: "http://localhost:4318"
+  sample_rate: 1.0
+  batch_timeout: "5s"
+  max_batch_size: 512
+  max_queue_size: 2048
+
 # 监控指标配置
 metrics:
   enabled: true
   service_name: "notevault"
   service_version: "1.0.0"
   exporter_type: "prometheus"
-  endpoint: ":9090"
+  endpoint: ":8081"
   collect_interval: "15s"
   runtime_metrics: true
   custom_metrics: []

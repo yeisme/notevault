@@ -58,6 +58,7 @@ func RegisterFactory(t configs.MQType, f Factory) {
 type Client struct {
 	publisher  message.Publisher
 	subscriber message.Subscriber
+	router     *message.Router
 	closeFunc  func() // 用于关闭metrics服务器
 }
 
@@ -106,6 +107,13 @@ func (c *Client) Close() error {
 		}
 	}
 
+	if c.router != nil {
+		// 停止 router，确保所有 handler 停止运行
+		if e := c.router.Close(); e != nil {
+			err = e
+		}
+	}
+
 	if c.closeFunc != nil {
 		c.closeFunc()
 	}
@@ -138,16 +146,35 @@ func New(ctx context.Context) (*Client, error) {
 			return
 		}
 
-		var closeFunc func()
+		var (
+			closeFunc func()
+			router    *message.Router
+		)
 
 		if configs.GetConfig().Metrics.Enabled {
 			metricsCfg := configs.GetConfig().Metrics
 			prometheusRegistry, closeMetricsServer := metrics.CreateRegistryAndServeHTTP(metricsCfg.Endpoint)
 			closeFunc = closeMetricsServer
 
-			// 创建metrics builder
+			// 创建并启动 router（用于 metrics 与将来 handler）
+			var err error
+
+			router, err = message.NewRouter(message.RouterConfig{}, logger)
+			if err != nil {
+				mqErr = fmt.Errorf("create router: %w", err)
+				return
+			}
+
+			// 启动 router
+			go func() {
+				if runErr := router.Run(ctx); runErr != nil {
+					nlog.Logger().Error().Err(runErr).Msg("router run error")
+				}
+			}()
+
+			// 创建metrics builder 并绑定 router
 			metricsBuilder := metrics.NewPrometheusMetricsBuilder(prometheusRegistry, "", "")
-			metricsBuilder.AddPrometheusRouterMetrics(nil) // 如果有router，可以添加
+			metricsBuilder.AddPrometheusRouterMetrics(router)
 
 			// 装饰publisher和subscriber
 			pub, err = metricsBuilder.DecoratePublisher(pub)
@@ -165,7 +192,7 @@ func New(ctx context.Context) (*Client, error) {
 			nlog.Logger().Info().Str("endpoint", metricsCfg.Endpoint).Msg("MQ metrics enabled")
 		}
 
-		mqInst = &Client{publisher: pub, subscriber: sub, closeFunc: closeFunc}
+		mqInst = &Client{publisher: pub, subscriber: sub, router: router, closeFunc: closeFunc}
 
 		nlog.Logger().Info().Str("type", string(cfg.Type)).Msg("MQ 管理器已初始化")
 	})
