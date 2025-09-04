@@ -27,6 +27,7 @@ type MetricsConfig struct {
 	RuntimeMetrics  bool              `mapstructure:"runtime_metrics"`  // 是否收集运行时指标
 	CustomMetrics   []string          `mapstructure:"custom_metrics"`   // 自定义指标列表
 	Labels          map[string]string `mapstructure:"labels"`           // 默认标签
+	Pprof           bool              `mapstructure:"pprof"`            // 是否启用pprof性能分析
 }
 
 // setDefaults 设置Metrics配置的默认值.
@@ -43,4 +44,5 @@ func (c *MetricsConfig) setDefaults(v *viper.Viper) {
 		"service": "notevault",
 		"version": "1.0.0",
 	})
+	v.SetDefault("metrics.pprof", false)
 }

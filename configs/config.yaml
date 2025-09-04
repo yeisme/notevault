@@ -60,3 +60,4 @@ metrics:
   labels:
     service: "notevault"
     version: "1.0.0"
+  pprof: true

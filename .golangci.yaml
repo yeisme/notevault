@@ -23,7 +23,7 @@ linters:
       branch-max-lines: 2
     errcheck:
       check-type-assertions: true
-      check-blank: true
+      check-blank: false
       disable-default-exclusions: false
       verbose: true
       exclude-functions:

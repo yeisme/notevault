@@ -13,25 +13,18 @@
 //	// 记录指标
 //	metrics.RequestCounter.WithLabelValues("GET", "/api/notes").Inc()
 //	metrics.RequestDuration.WithLabelValues("GET", "/api/notes").Observe(0.1)
-//
-//	// 启动HTTP服务器暴露指标
-//	metrics.StartMetricsServer()
 package metrics
 
 import (
 	"net/http"
-	"time"
+	_ "net/http/pprof" // 自动注册pprof端点
 
+	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/yeisme/notevault/pkg/configs"
-)
-
-const (
-	// DefaultHTTPTimeout 默认HTTP超时时间.
-	DefaultHTTPTimeout = 30 * time.Second
 )
 
 // 全局指标变量.
@@ -95,23 +88,17 @@ func InitMetrics(config configs.MetricsConfig) error {
 }
 
 // StartMetricsServer 启动Metrics HTTP服务器.
-func StartMetricsServer(config configs.MetricsConfig) error {
+func StartMetricsServer(config configs.MetricsConfig, debugEngine *gin.Engine) error {
 	if !config.Enabled {
 		return nil
 	}
 
-	http.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
-	server := &http.Server{
-		Addr:         config.Endpoint,
-		ReadTimeout:  DefaultHTTPTimeout,
-		WriteTimeout: DefaultHTTPTimeout,
-	}
+	debugEngine.GET("/metrics", gin.WrapH(promhttp.HandlerFor(registry, promhttp.HandlerOpts{})))
 
-	go func() {
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			panic(err)
-		}
-	}()
+	// 如果启用pprof，注册pprof端点
+	if config.Pprof {
+		debugEngine.GET("/debug/pprof/*any", gin.WrapH(http.DefaultServeMux))
+	}
 
 	return nil
 }
