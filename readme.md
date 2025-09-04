@@ -9,7 +9,7 @@ notevault 核心功能是将文件（多模态数据）存储到对象存储中�
 
 ## 快速开始
 
-### 使用 Docker Compose (推荐用于开发)
+### 使用 Docker Compose 进行本地开发
 
 1. 确保已安装 Docker 和 Docker Compose
 
@@ -26,7 +26,12 @@ notevault 核心功能是将文件（多模态数据）存储到对象存储中�
    docker-compose up -d
    ```
 
+   ```bash
+   go run cmd/notevault/main.go
+   ```
+
 4. 服务启动后，可以访问：
+
    - NoteVault API: <http://localhost:8080>
    - MinIO Console: <http://localhost:9001> (用户名: minioadmin, 密码: minioadmin)
    - Prometheus: <http://localhost:9090>
@@ -43,22 +48,6 @@ notevault 核心功能是将文件（多模态数据）存储到对象存储中�
 
    ```bash
    docker-compose down
-   ```
-
-### 本地开发
-
-1. 安装依赖：
-
-   ```bash
-   go mod download
-   ```
-
-2. 确保本地运行 PostgreSQL, MinIO, NATS 等服务，或修改 `configs/config.yaml` 中的配置
-
-3. 运行应用：
-
-   ```bash
-   go run cmd/notevault/main.go
    ```
 
 ## 配置
