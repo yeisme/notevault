@@ -34,6 +34,8 @@ func New(ctx context.Context, cfg *configs.S3Config) (*Client, error) {
 		Secure: cfg.UseSSL,
 		Region: cfg.Region,
 	})
+	cli.SetAppInfo("notevault", configs.AppVersion)
+
 	if err != nil {
 		return nil, fmt.Errorf("create minio client: %w", err)
 	}

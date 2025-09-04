@@ -53,14 +53,20 @@ import (
 	"github.com/yeisme/notevault/pkg/rule"
 )
 
+const (
+	AppVersion = "1.0.0"
+)
+
 type (
 	// AppConfig 全局应用程序配置.
 	AppConfig struct {
-		DB     DBConfig     `mapstructure:"db"`     // DBConfig 数据库配置
-		S3     S3Config     `mapstructure:"s3"`     // S3Config 对象存储配置
-		MQ     MQConfig     `mapstructure:"mq"`     // MQConfig 消息队列配置
-		Server ServerConfig `mapstructure:"server"` // ServerConfig 其它服务器配置，日志级别、服务器端口等
-		Log    LogConfig    `mapstructure:"log"`    // LogConfig 日志相关配置
+		DB      DBConfig      `mapstructure:"db"`      // DBConfig 数据库配置
+		S3      S3Config      `mapstructure:"s3"`      // S3Config 对象存储配置
+		MQ      MQConfig      `mapstructure:"mq"`      // MQConfig 消息队列配置
+		Server  ServerConfig  `mapstructure:"server"`  // ServerConfig 其它服务器配置，日志级别、服务器端口等
+		Log     LogConfig     `mapstructure:"log"`     // LogConfig 日志相关配置
+		Tracing TracingConfig `mapstructure:"tracing"` // TracingConfig 分布式追踪配置
+		Metrics MetricsConfig `mapstructure:"metrics"` // MetricsConfig 监控指标配置
 	}
 )
 
@@ -127,21 +133,23 @@ func InitConfig(path string) error {
 
 // setAllDefaults 设置所有配置的默认值.
 func setAllDefaults(v *viper.Viper) {
-	var serverConfig ServerConfig
-
-	var dbConfig DBConfig
-
-	var s3Config S3Config
-
-	var mqConfig MQConfig
-
-	var logConfig LogConfig
+	var (
+		serverConfig  ServerConfig
+		dbConfig      DBConfig
+		s3Config      S3Config
+		mqConfig      MQConfig
+		logConfig     LogConfig
+		tracingConfig TracingConfig
+		metricsConfig MetricsConfig
+	)
 
 	serverConfig.setDefaults(v)
 	dbConfig.setDefaults(v)
 	s3Config.setDefaults(v)
 	mqConfig.setDefaults(v)
 	logConfig.setDefaults(v)
+	tracingConfig.setDefaults(v)
+	metricsConfig.setDefaults(v)
 }
 
 func reloadConfigs(v *viper.Viper, isHotReload bool) {

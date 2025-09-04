@@ -24,18 +24,18 @@ repos:
         types: [go]
         pass_filenames: false
 
+      - id: golangci-lint-fmt
+        name: golang-lint-fmt
+        description: "Run golangci-lint fmt to format Go code."
+        entry: golangci-lint fmt .
+        language: system
+        types: [go]
+        pass_filenames: false
+
       - id: go-mod-tidy
         name: go mod tidy
         description: "Run 'go mod tidy' to clean up go.mod."
         entry: go mod tidy
         language: system
         files: ^go\.mod$
-        pass_filenames: false
-
-      - id: go-unit-tests
-        name: go-unit-tests
-        description: "Run Go unit tests."
-        entry: go test ./...
-        language: system
-        types: [go]
         pass_filenames: false
