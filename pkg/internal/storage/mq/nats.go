@@ -1,5 +1,5 @@
-// Package mq 提供 NATS 消息队列操作实现。
-// 此文件包含 NATS 特定的工厂函数，用于创建配置了可选 JetStream 支持的 Publisher 和 Subscriber 实例。
+// Package mq 提供 NATS 消息队列操作实现.
+// 此文件包含 NATS 特定的工厂函数，用于创建配置了可选 JetStream 支持的 Publisher 和 Subscriber 实例.
 //
 // 支持的功能特性：
 //   - 连接池和重连机制
@@ -8,7 +8,7 @@
 //   - 通过主题前缀实现负载均衡
 //   - 指标集成（占位符，供未来实现）
 //
-// 配置从 configs.MQConfig 读取，支持集群 URL 以实现高可用性。
+// 配置从 configs.MQConfig 读取，支持集群 URL 以实现高可用性.
 package mq
 
 import (
