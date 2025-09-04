@@ -8,6 +8,7 @@ import (
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	gormPrometheus "gorm.io/plugin/prometheus"
 
 	"github.com/yeisme/notevault/pkg/configs"
 	nlog "github.com/yeisme/notevault/pkg/log"
@@ -49,7 +50,9 @@ type Client struct {
 	*gorm.DB
 }
 
-func New(ctx context.Context, cfg *configs.DBConfig) (*Client, error) {
+func New(ctx context.Context) (*Client, error) {
+	cfg := configs.GetConfig().DB
+
 	globalDBManager.mu.Lock()
 	defer globalDBManager.mu.Unlock()
 
@@ -101,13 +104,20 @@ func New(ctx context.Context, cfg *configs.DBConfig) (*Client, error) {
 	}
 
 	client := &Client{DB: db}
+	if configs.GetConfig().Metrics.Enabled {
+		if err := client.RegisterGORMMetrics(cfg.Database); err != nil {
+			return nil, fmt.Errorf("failed to register GORM metrics: %w", err)
+		} else {
+			nlog.Logger().Info().Msg("GORM metrics 注册成功")
+		}
+	}
 
 	nlog.Logger().Info().
 		Str("type", cfg.GetDBType()).
 		Str("host", cfg.Host).
 		Int("port", cfg.Port).
 		Str("database", cfg.Database).
-		Msg("database connected successfully")
+		Msg("数据库连接成功")
 
 	return client, nil
 }
@@ -115,4 +125,22 @@ func New(ctx context.Context, cfg *configs.DBConfig) (*Client, error) {
 // GetDB 返回 GORM DB 实例.
 func (c *Client) GetDB() *gorm.DB {
 	return c.DB
+}
+
+const defaultGORMMetricsRefreshInterval = 15 // 秒
+
+// RegisterGORMMetrics 注册GORM指标到现有注册表.
+func (c *Client) RegisterGORMMetrics(dbName string) error {
+	// 使用现有的注册表而不是让插件创建新的
+	promConfig := gormPrometheus.Config{
+		DBName:          dbName,
+		RefreshInterval: defaultGORMMetricsRefreshInterval,
+		StartServer:     false, // 不启动独立的服务器
+	}
+
+	if err := c.Use(gormPrometheus.New(promConfig)); err != nil {
+		return fmt.Errorf("failed to register GORM prometheus plugin: %w", err)
+	}
+
+	return nil
 }

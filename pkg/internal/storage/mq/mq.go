@@ -35,6 +35,7 @@ import (
 	"sync"
 
 	watermill "github.com/ThreeDotsLabs/watermill"
+	"github.com/ThreeDotsLabs/watermill/components/metrics"
 	"github.com/ThreeDotsLabs/watermill/message"
 
 	"github.com/yeisme/notevault/pkg/configs"
@@ -57,6 +58,7 @@ func RegisterFactory(t configs.MQType, f Factory) {
 type Client struct {
 	publisher  message.Publisher
 	subscriber message.Subscriber
+	closeFunc  func() // 用于关闭metrics服务器
 }
 
 // Publish 便捷发布.
@@ -104,6 +106,10 @@ func (c *Client) Close() error {
 		}
 	}
 
+	if c.closeFunc != nil {
+		c.closeFunc()
+	}
+
 	return err
 }
 
@@ -132,7 +138,34 @@ func New(ctx context.Context) (*Client, error) {
 			return
 		}
 
-		mqInst = &Client{publisher: pub, subscriber: sub}
+		var closeFunc func()
+
+		if configs.GetConfig().Metrics.Enabled {
+			metricsCfg := configs.GetConfig().Metrics
+			prometheusRegistry, closeMetricsServer := metrics.CreateRegistryAndServeHTTP(metricsCfg.Endpoint)
+			closeFunc = closeMetricsServer
+
+			// 创建metrics builder
+			metricsBuilder := metrics.NewPrometheusMetricsBuilder(prometheusRegistry, "", "")
+			metricsBuilder.AddPrometheusRouterMetrics(nil) // 如果有router，可以添加
+
+			// 装饰publisher和subscriber
+			pub, err = metricsBuilder.DecoratePublisher(pub)
+			if err != nil {
+				mqErr = fmt.Errorf("decorate publisher with metrics: %w", err)
+				return
+			}
+
+			sub, err = metricsBuilder.DecorateSubscriber(sub)
+			if err != nil {
+				mqErr = fmt.Errorf("decorate subscriber with metrics: %w", err)
+				return
+			}
+
+			nlog.Logger().Info().Str("endpoint", metricsCfg.Endpoint).Msg("MQ metrics enabled")
+		}
+
+		mqInst = &Client{publisher: pub, subscriber: sub, closeFunc: closeFunc}
 
 		nlog.Logger().Info().Str("type", string(cfg.Type)).Msg("MQ 管理器已初始化")
 	})

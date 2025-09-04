@@ -19,8 +19,6 @@ var (
 		Use:   "notevault",
 		Short: "A command line tool for managing notes",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// 这里可以添加应用程序的主要逻辑
-			log.Info().Msg("Notevault is running, config loaded successfully.")
 
 			return nil
 		},

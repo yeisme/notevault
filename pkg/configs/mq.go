@@ -82,8 +82,6 @@ type MQConfig struct {
 	// 集群和扩展配置
 	ClusterURLs []string `mapstructure:"cluster_urls"`
 	LoadBalance bool     `mapstructure:"load_balance"`
-	// 监控和指标
-	EnableMetrics bool `mapstructure:"enable_metrics"`
 }
 
 // GetMQType 返回当前配置的消息队列类型.
@@ -140,7 +138,4 @@ func (c *MQConfig) setDefaults(v *viper.Viper) {
 	// 集群和扩展默认值
 	v.SetDefault("mq.cluster_urls", []string{})
 	v.SetDefault("mq.load_balance", true)
-
-	// 监控和指标默认值
-	v.SetDefault("mq.enable_metrics", false)
 }

@@ -179,10 +179,5 @@ func createSubscriber(
 		})
 	}
 
-	// TODO 集成监控指标
-	if cfg.EnableMetrics {
-		logger.Info("NATS 指标已启用", nil)
-	}
-
 	return nats.NewSubscriber(subCfg, logger)
 }

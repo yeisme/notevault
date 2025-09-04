@@ -4,6 +4,9 @@ package context
 import (
 	"context"
 
+	"github.com/rs/zerolog"
+	"go.opentelemetry.io/otel/trace"
+
 	"github.com/yeisme/notevault/pkg/internal/storage"
 	dbc "github.com/yeisme/notevault/pkg/internal/storage/db"
 	mqc "github.com/yeisme/notevault/pkg/internal/storage/mq"
@@ -55,4 +58,17 @@ func GetMQClient(ctx context.Context) *mqc.Client {
 	}
 
 	return nil
+}
+
+// WithTraceContext 创建带有追踪上下文的logger.
+func WithTraceContext(ctx context.Context, logger zerolog.Logger) zerolog.Logger {
+	span := trace.SpanFromContext(ctx)
+	if span.IsRecording() {
+		return logger.With().
+			Str("trace_id", span.SpanContext().TraceID().String()).
+			Str("span_id", span.SpanContext().SpanID().String()).
+			Logger()
+	}
+
+	return logger
 }

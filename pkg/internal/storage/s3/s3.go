@@ -19,7 +19,8 @@ type Client struct {
 }
 
 // New 初始化 MinIO 客户端，若 bucket 不存在则尝试创建.
-func New(ctx context.Context, cfg *configs.S3Config) (*Client, error) {
+func New(ctx context.Context) (*Client, error) {
+	cfg := configs.GetConfig().S3
 	endpoint := cfg.Endpoint
 	// 允许用户传完整 schema endpoint（http:// 或 https://）
 	if u, err := url.Parse(endpoint); err == nil && u.Host != "" {

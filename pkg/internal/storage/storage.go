@@ -22,7 +22,6 @@ import (
 	"context"
 	"sync"
 
-	"github.com/yeisme/notevault/pkg/configs"
 	dbc "github.com/yeisme/notevault/pkg/internal/storage/db"
 	mqc "github.com/yeisme/notevault/pkg/internal/storage/mq"
 	s3c "github.com/yeisme/notevault/pkg/internal/storage/s3"
@@ -46,18 +45,17 @@ func Init(ctx context.Context) (*Manager, error) {
 	var err error
 
 	mgrOnce.Do(func() {
-		cfg := configs.GetConfig()
 		m := &Manager{}
 
 		// DB
-		if dbi, e := dbc.New(ctx, &cfg.DB); e != nil {
+		if dbi, e := dbc.New(ctx); e != nil {
 			nlog.Logger().Error().Err(e).Msg("init db failed")
 		} else {
 			m.db = dbi
 		}
 
 		// S3
-		if s3i, e := s3c.New(ctx, &cfg.S3); e != nil {
+		if s3i, e := s3c.New(ctx); e != nil {
 			nlog.Logger().Error().Err(e).Msg("init s3 failed")
 
 			return
