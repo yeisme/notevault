@@ -2,10 +2,14 @@
 package cmd
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/spf13/cobra"
 
 	"github.com/yeisme/notevault/pkg/app"
 	"github.com/yeisme/notevault/pkg/configs"
+	"github.com/yeisme/notevault/pkg/log"
 )
 
 var (
@@ -17,6 +21,12 @@ var (
 			return applications.Run()
 		},
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			// 初始化配置
+			if err := configs.InitConfig(configPath); err != nil {
+				fmt.Printf("Error initializing config: %v\n", err)
+				os.Exit(1)
+			}
+			log.Init()
 		},
 	}
 )

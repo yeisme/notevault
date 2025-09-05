@@ -32,12 +32,6 @@ func NewApp(configPath string) *App {
 	ctx := contextPkg.Background()
 	engine := gin.New()
 
-	// 初始化配置
-	if err := configs.InitConfig(configPath); err != nil {
-		fmt.Printf("Error initializing config: %v\n", err)
-		os.Exit(1)
-	}
-
 	// 初始化追踪
 	config := configs.GetConfig()
 	if err := tracing.InitTracer(config.Tracing); err != nil {
