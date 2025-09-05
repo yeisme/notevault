@@ -32,3 +32,5 @@ dist/
 
 logs/
 *.log
+
+.task/

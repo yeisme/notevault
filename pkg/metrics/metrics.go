@@ -17,9 +17,8 @@ package metrics
 
 import (
 	"net/http"
-	_ "net/http/pprof" // 自动注册pprof端点
+	"net/http/pprof"
 
-	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -88,22 +87,29 @@ func InitMetrics(config configs.MetricsConfig) error {
 }
 
 // StartMetricsServer 启动Metrics HTTP服务器.
-func StartMetricsServer(config configs.MetricsConfig, engine *gin.Engine) error {
+func StartMetricsServer(config configs.MetricsConfig) (http.Handler, error) {
 	if !config.Enabled {
-		return nil
+		return nil, nil
 	}
 
-	engine.GET("/metrics", gin.WrapH(promhttp.HandlerFor(registry, promhttp.HandlerOpts{})))
+	mux := http.NewServeMux()
+	mux.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
 
 	// 如果启用pprof，注册pprof端点
 	if config.Pprof {
-		engine.GET("/debug/pprof/*any", gin.WrapH(http.DefaultServeMux))
-		engine.GET("/debug/", func(c *gin.Context) {
-			c.Redirect(http.StatusFound, "/debug/pprof/")
+		mux.HandleFunc("/debug/pprof/", pprof.Index)
+		mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+		mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+		mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+		mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+
+		// 兼容性：提供 /debug 页面重定向到 /debug/pprof/
+		mux.HandleFunc("/debug", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/debug/pprof/", http.StatusFound)
 		})
 	}
 
-	return nil
+	return mux, nil
 }
 
 // GetRegistry 获取Prometheus注册表.
