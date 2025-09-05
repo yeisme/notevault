@@ -13,7 +13,6 @@ import (
 	"github.com/rs/zerolog"
 
 	"github.com/yeisme/notevault/pkg/configs"
-	"github.com/yeisme/notevault/pkg/context"
 	"github.com/yeisme/notevault/pkg/internal/storage"
 	"github.com/yeisme/notevault/pkg/log"
 	"github.com/yeisme/notevault/pkg/metrics"
@@ -58,8 +57,6 @@ func NewApp(configPath string) *App {
 		os.Exit(1)
 	}
 
-	context.WithStorageManager(ctx, manager)
-
 	l := log.Logger()
 	gin.DefaultWriter = log.NewGinWriter(l, zerolog.InfoLevel)
 	gin.DefaultErrorWriter = log.NewGinWriter(l, zerolog.ErrorLevel)
@@ -69,6 +66,7 @@ func NewApp(configPath string) *App {
 		middleware.CORSMiddleware(),
 		middleware.TracingMiddleware(),
 		middleware.PrometheusMiddleware(),
+		middleware.StorageMiddleware(manager),
 	)
 
 	var ms *http.Server
