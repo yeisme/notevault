@@ -6,12 +6,15 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
 	"strings"
+	"syscall"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 
+	"github.com/yeisme/notevault/pkg/api"
 	"github.com/yeisme/notevault/pkg/configs"
 	"github.com/yeisme/notevault/pkg/internal/storage"
 	"github.com/yeisme/notevault/pkg/log"
@@ -48,7 +51,7 @@ func NewApp(configPath string) *App {
 	manager, err := storage.Init(ctx)
 	if err != nil {
 		fmt.Printf("Error initializing storage: %v\n", err)
-		os.Exit(1)
+		// 继续运行，当存储无法使用的时候，可以继续运行，通过健康检查暴露错误
 	}
 
 	l := log.Logger()
@@ -129,6 +132,8 @@ func initMetricsServer(engine *gin.Engine, config *configs.AppConfig) (*http.Ser
 		return nil, nil
 	}
 
+	api.RegisterAPIs(engine)
+
 	// 单独启动 metrics server
 	return &http.Server{
 		Addr:    endpoint,
@@ -137,8 +142,11 @@ func initMetricsServer(engine *gin.Engine, config *configs.AppConfig) (*http.Ser
 }
 
 // Run 启动主服务器和（可选的）监控服务器.
+// TODO: 优雅关闭.
 func (a *App) Run() error {
-	// 在后台启动，不阻塞主程序构造
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
+
 	go func() {
 		if a.metricsServer == nil {
 			return
@@ -153,10 +161,15 @@ func (a *App) Run() error {
 
 	a.log.Info().Msgf("Starting server on %s:%d", a.config.Server.Host, a.config.Server.Port)
 
-	if err := a.mainServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		a.log.Error().Err(err).Msg("Server error")
-		return err
-	}
+	go func() {
+		if err := a.mainServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			fmt.Printf("main server error: %v\n", err)
+		}
+	}()
+
+	<-signalChan
+
+	a.log.Info().Msg("Shutdown signal received, shutting down servers...")
 
 	return nil
 }

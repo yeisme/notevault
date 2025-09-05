@@ -49,6 +49,7 @@ type MQConfig struct {
 	ClientID      string `mapstructure:"client_id"`
 	MaxReconnects int    `mapstructure:"max_reconnects" rule:"min=0,max=100"`
 	ReconnectWait int    `mapstructure:"reconnect_wait" rule:"min=1,max=300"`
+	StrictConnect bool   `mapstructure:"strict_connect"` // 若为 true，初始化阶段必须成功建立 TCP 连接，否则返回错误并返回 nil Client
 	// 高性能和高优化配置
 	MaxPingsOut        int  `mapstructure:"max_pings_out"        rule:"min=1,max=10"`
 	PingInterval       int  `mapstructure:"ping_interval"        rule:"min=1,max=300"`
@@ -99,6 +100,7 @@ func (c *MQConfig) setDefaults(v *viper.Viper) {
 	v.SetDefault("mq.client_id", DefaultMQClientID)
 	v.SetDefault("mq.max_reconnects", DefaultMaxReconnects)
 	v.SetDefault("mq.reconnect_wait", DefaultReconnectWait)
+	v.SetDefault("mq.strict_connect", false)
 
 	// 高性能和高优化默认值
 	v.SetDefault("mq.max_pings_out", DefaultMaxPingsOut)

@@ -20,6 +20,7 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"sync"
 
 	dbc "github.com/yeisme/notevault/pkg/internal/storage/db"
@@ -42,40 +43,48 @@ var (
 
 // Init 初始化默认存储，使用全局配置.重复调用只返回已初始化实例.
 func Init(ctx context.Context) (*Manager, error) {
-	var err error
+	var collectedErrs []error
 
 	mgrOnce.Do(func() {
 		m := &Manager{}
 
-		// DB
+		// DB（失败不阻断后续）
 		if dbi, e := dbc.New(ctx); e != nil {
 			nlog.Logger().Error().Err(e).Msg("init db failed")
+			collectedErrs = append(collectedErrs, e)
 		} else {
 			m.db = dbi
 		}
 
-		// S3
+		// S3（失败也不提前 return，保证 MQ 仍被尝试初始化）
 		if s3i, e := s3c.New(ctx); e != nil {
 			nlog.Logger().Error().Err(e).Msg("init s3 failed")
-
-			return
+			collectedErrs = append(collectedErrs, e)
 		} else {
 			m.s3 = s3i
 		}
 
-		// MQ
+		// MQ（同样收集错误）
 		if mqMgr, e := mqc.New(ctx); e != nil {
 			nlog.Logger().Error().Err(e).Msg("init mq failed")
-
-			return
+			collectedErrs = append(collectedErrs, e)
 		} else {
 			m.mq = mqMgr
 		}
 
-		mgr = m
+		// 仅当至少有一个成功时才赋值 mgr；否则保持 nil 便于上层感知
+		if m.db != nil || m.s3 != nil || m.mq != nil {
+			mgr = m
 
-		nlog.Logger().Info().Msg("storage manager initialized")
+			nlog.Logger().Info().Msg("storage manager initialized (partial possible)")
+		}
 	})
+
+	var err error
+	if len(collectedErrs) > 0 {
+		// 使用 errors.Join 聚合（Go 1.20+）
+		err = errors.Join(collectedErrs...)
+	}
 
 	return mgr, err
 }

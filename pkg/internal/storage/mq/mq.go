@@ -31,8 +31,12 @@ package mq
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net"
+	"strings"
 	"sync"
+	"time"
 
 	watermill "github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill/components/metrics"
@@ -47,6 +51,10 @@ type Factory func(ctx context.Context, cfg *configs.MQConfig, logger watermill.L
 
 var (
 	factories = map[configs.MQType]Factory{}
+)
+
+const (
+	strictConnectDialTimeout = 2 * time.Second // Strict 模式下的拨号超时
 )
 
 // RegisterFactory 注册指定 MQType 的工厂.
@@ -127,18 +135,116 @@ var (
 	mqErr  error
 )
 
+// validateBasicConfig 验证 MQ 配置的基本要求.
+func validateBasicConfig(cfg *configs.MQConfig) error {
+	if cfg.URL == "" && len(cfg.ClusterURLs) == 0 {
+		return errors.New("mq url or cluster_urls required")
+	}
+
+	if _, ok := factories[cfg.Type]; !ok {
+		return fmt.Errorf("unsupported mq type: %s", cfg.Type)
+	}
+
+	return nil
+}
+
+// pickProbeTarget 从配置中选择一个用于 TCP 探测的目标地址.
+func pickProbeTarget(cfg *configs.MQConfig) string {
+	target := cfg.URL
+	if target == "" && len(cfg.ClusterURLs) > 0 {
+		target = cfg.ClusterURLs[0]
+	}
+
+	if strings.Contains(target, ",") { // 多地址只取第一个探测
+		target = strings.Split(target, ",")[0]
+	}
+
+	if !strings.Contains(target, ":") {
+		target += ":4222"
+	}
+
+	return target
+}
+
+// strictProbe 在 StrictConnect 模式下尝试建立 TCP 连接以验证可达性.
+func strictProbe(ctx context.Context, cfg *configs.MQConfig) error {
+	if !cfg.StrictConnect {
+		return nil
+	}
+
+	target := pickProbeTarget(cfg)
+	d := net.Dialer{Timeout: strictConnectDialTimeout}
+
+	conn, err := d.DialContext(ctx, "tcp", target)
+	if err != nil {
+		return fmt.Errorf("strict connect dial %s failed: %w", target, err)
+	}
+
+	_ = conn.Close()
+
+	return nil
+}
+
+// enableMetricsIfNeeded 根据配置决定是否启用 Watermill 的 Prometheus 指标支持.
+func enableMetricsIfNeeded(
+	ctx context.Context,
+	pub message.Publisher,
+	sub message.Subscriber,
+	logger watermill.LoggerAdapter,
+) (message.Publisher, message.Subscriber, *message.Router, func(), error) {
+	if !configs.GetConfig().Metrics.Enabled {
+		return pub, sub, nil, nil, nil
+	}
+
+	metricsCfg := configs.GetConfig().Metrics
+	prometheusRegistry, closeMetricsServer := metrics.CreateRegistryAndServeHTTP(metricsCfg.Endpoint)
+
+	router, err := message.NewRouter(message.RouterConfig{}, logger)
+	if err != nil {
+		return nil, nil, nil, nil, fmt.Errorf("create router: %w", err)
+	}
+
+	go func() {
+		if runErr := router.Run(ctx); runErr != nil {
+			nlog.Logger().Error().Err(runErr).Msg("router run error")
+		}
+	}()
+
+	metricsBuilder := metrics.NewPrometheusMetricsBuilder(prometheusRegistry, "", "")
+	metricsBuilder.AddPrometheusRouterMetrics(router)
+
+	decoratedPub, err := metricsBuilder.DecoratePublisher(pub)
+	if err != nil {
+		return nil, nil, nil, nil, fmt.Errorf("decorate publisher with metrics: %w", err)
+	}
+
+	decoratedSub, err := metricsBuilder.DecorateSubscriber(sub)
+	if err != nil {
+		return nil, nil, nil, nil, fmt.Errorf("decorate subscriber with metrics: %w", err)
+	}
+
+	nlog.Logger().Info().Str("endpoint", metricsCfg.Endpoint).Msg("MQ metrics enabled")
+
+	return decoratedPub, decoratedSub, router, closeMetricsServer, nil
+}
+
 // New 初始化消息队列（单例）.
 func New(ctx context.Context) (*Client, error) {
 	mqOnce.Do(func() {
 		cfg := configs.GetConfig().MQ
 
-		factory, ok := factories[cfg.Type]
-		if !ok {
-			mqErr = fmt.Errorf("unsupported mq type: %s", cfg.Type)
+		if err := validateBasicConfig(&cfg); err != nil {
+			mqErr = err
+			return
+		}
+
+		if err := strictProbe(ctx, &cfg); err != nil {
+			mqErr = err
 			return
 		}
 
 		logger := &zerologAdapter{l: nlog.Logger()}
+		factory := factories[cfg.Type]
 
 		pub, sub, err := factory(ctx, &cfg, logger)
 		if err != nil {
@@ -146,55 +252,15 @@ func New(ctx context.Context) (*Client, error) {
 			return
 		}
 
-		var (
-			closeFunc func()
-			router    *message.Router
-		)
-
-		if configs.GetConfig().Metrics.Enabled {
-			metricsCfg := configs.GetConfig().Metrics
-			prometheusRegistry, closeMetricsServer := metrics.CreateRegistryAndServeHTTP(metricsCfg.Endpoint)
-			closeFunc = closeMetricsServer
-
-			// 创建并启动 router（用于 metrics 与将来 handler）
-			var err error
-
-			router, err = message.NewRouter(message.RouterConfig{}, logger)
-			if err != nil {
-				mqErr = fmt.Errorf("create router: %w", err)
-				return
-			}
-
-			// 启动 router
-			go func() {
-				if runErr := router.Run(ctx); runErr != nil {
-					nlog.Logger().Error().Err(runErr).Msg("router run error")
-				}
-			}()
-
-			// 创建metrics builder 并绑定 router
-			metricsBuilder := metrics.NewPrometheusMetricsBuilder(prometheusRegistry, "", "")
-			metricsBuilder.AddPrometheusRouterMetrics(router)
-
-			// 装饰publisher和subscriber
-			pub, err = metricsBuilder.DecoratePublisher(pub)
-			if err != nil {
-				mqErr = fmt.Errorf("decorate publisher with metrics: %w", err)
-				return
-			}
-
-			sub, err = metricsBuilder.DecorateSubscriber(sub)
-			if err != nil {
-				mqErr = fmt.Errorf("decorate subscriber with metrics: %w", err)
-				return
-			}
-
-			nlog.Logger().Info().Str("endpoint", metricsCfg.Endpoint).Msg("MQ metrics enabled")
+		pub, sub, router, closeFunc, err := enableMetricsIfNeeded(ctx, pub, sub, logger)
+		if err != nil {
+			mqErr = err
+			return
 		}
 
 		mqInst = &Client{publisher: pub, subscriber: sub, router: router, closeFunc: closeFunc}
 
-		nlog.Logger().Info().Str("type", string(cfg.Type)).Msg("MQ 管理器已初始化")
+		nlog.Logger().Info().Str("type", string(cfg.Type)).Bool("strict", cfg.StrictConnect).Msg("MQ 管理器已初始化")
 	})
 
 	return mqInst, mqErr
