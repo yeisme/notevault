@@ -1,0 +1,30 @@
+@fileurl=http://localhost:8080/api/v1/files
+
+### 生成预签名 URL JSON
+
+POST {{fileurl}}/upload/urls/policy
+Content-Type: application/json
+
+{
+  "files": [
+    {
+      "file_name": "example1.txt",
+      "file_type": "text/plain"
+    },
+    {
+      "file_name": "example2.jpg",
+      "file_type": "image/jpeg"
+    }
+  ]
+}
+
+### 生成预签名 URL YAML
+
+POST {{fileurl}}/upload/urls/policy
+Content-Type: application/yaml
+
+files:
+  - file_name: example1.txt
+    file_type: text/plain
+  - file_name: example2.jpg
+    file_type: image/jpeg

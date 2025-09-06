@@ -2,7 +2,7 @@ package types
 
 // UploadFilesRequestPolicy 批量文件上传请求.
 type UploadFilesRequestPolicy struct {
-	Files []UploadFileItem `json:"files"`
+	Files []UploadFileItem `binding:"required" json:"files"`
 }
 
 // UploadFilesResponsePolicy 预签名上传结果.

@@ -15,7 +15,7 @@ func UploadFileURLPolicy(c *gin.Context) {
 	fileLog := log.Logger()
 
 	var req types.UploadFilesRequestPolicy
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.ShouldBind(&req); err != nil {
 		fileLog.Warn().Err(err).Msg("invalid request")
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
