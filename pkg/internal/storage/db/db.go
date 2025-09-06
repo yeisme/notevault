@@ -144,3 +144,13 @@ func (c *Client) RegisterGORMMetrics(dbName string) error {
 
 	return nil
 }
+
+// Close 关闭底层数据库连接.
+func (c *Client) Close() error {
+	sqlDB, err := c.DB.DB()
+	if err != nil {
+		return fmt.Errorf("get underlying sql.DB: %w", err)
+	}
+
+	return sqlDB.Close()
+}

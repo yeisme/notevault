@@ -20,11 +20,13 @@ tasks:
     cmds:
       - golangci-lint run --fix
     desc: Run lint with golangci-lint
+    silent: true
 
   fmt:
     cmds:
       - golangci-lint fmt .
     desc: Format Go code with golangci-lint
+    silent: true
 
   init:
     cmds:

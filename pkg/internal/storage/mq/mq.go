@@ -192,11 +192,11 @@ func enableMetricsIfNeeded(
 	sub message.Subscriber,
 	logger watermill.LoggerAdapter,
 ) (message.Publisher, message.Subscriber, *message.Router, func(), error) {
-	if !configs.GetConfig().Metrics.Enabled {
+	metricsCfg := configs.GetConfig().MQ
+	if !metricsCfg.EnableMetrics {
 		return pub, sub, nil, nil, nil
 	}
 
-	metricsCfg := configs.GetConfig().Metrics
 	prometheusRegistry, closeMetricsServer := metrics.CreateRegistryAndServeHTTP(metricsCfg.Endpoint)
 
 	router, err := message.NewRouter(message.RouterConfig{}, logger)

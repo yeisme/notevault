@@ -75,7 +75,7 @@ metrics:
   service_name: "notevault"
   service_version: "1.0.0"
   exporter_type: "prometheus"
-  endpoint: ":8081"
+  endpoint: ":9091"
   collect_interval: "15s"
   runtime_metrics: true
   custom_metrics: []

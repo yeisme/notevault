@@ -36,7 +36,7 @@ func (c *MetricsConfig) setDefaults(v *viper.Viper) {
 	v.SetDefault("metrics.service_name", "notevault")
 	v.SetDefault("metrics.service_version", "1.0.0")
 	v.SetDefault("metrics.exporter_type", "prometheus")
-	v.SetDefault("metrics.endpoint", ":8081")
+	v.SetDefault("metrics.endpoint", ":9091")
 	v.SetDefault("metrics.collect_interval", "15s")
 	v.SetDefault("metrics.runtime_metrics", true)
 	v.SetDefault("metrics.custom_metrics", []string{})

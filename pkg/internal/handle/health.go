@@ -49,7 +49,7 @@ func HealthS3(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), timeout)
 	defer cancel()
 
-	if _, err := s3c.ListBuckets(ctx); err != nil {
+	if err := s3c.HealthCheck(ctx); err != nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"component": "s3", "status": "unhealthy", "error": err.Error()})
 		return
 	}

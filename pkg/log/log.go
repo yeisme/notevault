@@ -93,10 +93,12 @@ type GinWriter struct {
 	level  zerolog.Level
 }
 
+// NewGinWriter 创建一个新的 GinWriter.
 func NewGinWriter(logger *zerolog.Logger, level zerolog.Level) *GinWriter {
 	return &GinWriter{logger: logger, level: level}
 }
 
+// Write 实现 io.Writer 接口，把日志行写入 zerolog.
 func (w *GinWriter) Write(p []byte) (n int, err error) {
 	msg := strings.TrimSpace(string(p))
 	// 使用指定级别记录（按需可扩展解析 level）

@@ -19,6 +19,7 @@ type Client struct {
 }
 
 // New 初始化 MinIO 客户端，若 bucket 不存在则尝试创建.
+// 默认情况下，第一个 bucket 用于存储文件. 为了可以创建多个 bucket，配置中允许传入多个 bucket 名称.
 func New(ctx context.Context) (*Client, error) {
 	cfg := configs.GetConfig().S3
 	endpoint := cfg.Endpoint
@@ -64,4 +65,15 @@ func New(ctx context.Context) (*Client, error) {
 	nlog.Logger().Info().Str("endpoint", cfg.Endpoint).Int("bucket_count", len(cfg.Buckets)).Msg("s3 connected")
 
 	return &Client{Client: cli}, nil
+}
+
+// HealthCheck 简单的健康检查，通过列出桶来验证连接.
+func (c *Client) HealthCheck(ctx context.Context) error {
+	_, err := c.ListBuckets(ctx)
+	return err
+}
+
+// Close 关闭 S3 客户端连接（无实际操作，接口兼容）.
+func (c *Client) Close() error {
+	return nil
 }

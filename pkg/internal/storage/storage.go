@@ -103,3 +103,34 @@ func (m *Manager) GetDBClient() *dbc.Client {
 func (m *Manager) GetMQClient() *mqc.Client {
 	return m.mq
 }
+
+// Close 关闭所有存储客户端连接，返回可能的错误（聚合）.
+// TODO: 增加 Close 方法，关闭所有存储客户端连接. 在优雅关闭时调用.
+func (m *Manager) Close() error {
+	var collectedErrs []error
+
+	if m.s3 != nil {
+		if err := m.s3.Close(); err != nil {
+			collectedErrs = append(collectedErrs, err)
+		}
+	}
+
+	if m.db != nil {
+		if err := m.db.Close(); err != nil {
+			collectedErrs = append(collectedErrs, err)
+		}
+	}
+
+	if m.mq != nil {
+		if err := m.mq.Close(); err != nil {
+			collectedErrs = append(collectedErrs, err)
+		}
+	}
+
+	var err error
+	if len(collectedErrs) > 0 {
+		err = errors.Join(collectedErrs...)
+	}
+
+	return err
+}
