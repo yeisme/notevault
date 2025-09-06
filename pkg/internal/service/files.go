@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/minio/minio-go/v7"
 
 	ctxPkg "github.com/yeisme/notevault/pkg/context"
@@ -182,10 +181,9 @@ func (fs *FileService) presignGet(ctx context.Context, bucket string, item *type
 func buildObjectKey(user string, req *types.UploadFileItem) string {
 	fileName := req.FileName
 
-	id := uuid.New().String()
 	datePath := time.Now().UTC().Format("2006/01") // 只到月，避免目录过深
 
-	return fmt.Sprintf("%s/%s/%s_%s", user, datePath, id, fileName) // user/2023/10/uuid_filename
+	return fmt.Sprintf("%s/%s/%s", user, datePath, fileName) // user/2023/10/uuid_filename
 }
 
 // applyFilePolicies 应用文件策略到 MinIO PostPolicy.
