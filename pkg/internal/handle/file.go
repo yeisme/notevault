@@ -10,16 +10,11 @@ import (
 	"github.com/yeisme/notevault/pkg/log"
 )
 
-const (
-	// MaxFileSize 最大文件大小限制.
-	MaxFileSize = 100 * 1024 * 1024 // 100MB
-)
-
-// UploadFile 处理上传文件请求：生成预签名 URL 或直接上传.
-func UploadFile(c *gin.Context) {
+// UploadFileURLPolicy 处理上传文件请求：生成预签名 URL 或直接上传.
+func UploadFileURLPolicy(c *gin.Context) {
 	fileLog := log.Logger()
 
-	var req types.UploadFileRequest
+	var req types.UploadFilesRequestPolicy
 	if err := c.ShouldBindJSON(&req); err != nil {
 		fileLog.Warn().Err(err).Msg("invalid request")
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -27,10 +22,9 @@ func UploadFile(c *gin.Context) {
 		return
 	}
 
-	// 验证文件大小
-	if req.FileSize > MaxFileSize {
-		fileLog.Warn().Int64("file_size", req.FileSize).Msg("file size exceeds limit")
-		c.JSON(http.StatusBadRequest, gin.H{"error": "file size exceeds 10MB limit"})
+	if len(req.Files) == 0 {
+		fileLog.Warn().Msg("no files provided in request")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "no files provided"})
 
 		return
 	}
@@ -43,16 +37,14 @@ func UploadFile(c *gin.Context) {
 		return
 	}
 
-	fileLog.Info().
-		Str("file_name", req.FileName).
-		Str("file_type", req.FileType).
-		Int64("file_size", req.FileSize).
+	fileLog.Debug().
+		Int("file_count", len(req.Files)).
 		Str("user", user).
-		Msg("processing upload request")
+		Msg("processing batch upload request")
 
 	svc := service.NewFileService(c.Request.Context())
 
-	res, err := svc.PresignedPutURL(c.Request.Context(), user, &req)
+	res, err := svc.PresignedPostURLsPolicy(c.Request.Context(), user, &req)
 	if err != nil {
 		fileLog.Error().Err(err).Msg("failed to generate presigned URL")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -60,6 +52,11 @@ func UploadFile(c *gin.Context) {
 		return
 	}
 
-	fileLog.Info().Str("object_key", res.ObjectKey).Msg("successfully generated presigned URL")
+	fileLog.Info().Int("result_count", len(res.Results)).Msg("successfully generated presigned URLs")
 	c.JSON(http.StatusOK, res)
+}
+
+// UploadFileURL 处理单个文件上传请求：生成预签名 URL.
+func UploadFileURL(c *gin.Context) {
+
 }

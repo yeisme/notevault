@@ -77,3 +77,7 @@ func (c *Client) HealthCheck(ctx context.Context) error {
 func (c *Client) Close() error {
 	return nil
 }
+
+func (c *Client) GetConfig() configs.S3Config {
+	return configs.GetConfig().S3
+}
