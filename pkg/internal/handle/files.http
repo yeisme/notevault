@@ -28,3 +28,19 @@ files:
     file_type: text/plain
   - file_name: example2.jpg
     file_type: image/jpeg
+
+### 获取文件访问 URL JSON
+
+POST {{fileurl}}/download/url
+Content-Type: application/json
+
+{
+  "files": [
+    {
+      "object_key": "user/2023/10/uuid_example1.txt"
+    },
+    {
+      "object_key": "user/2023/10/uuid_example2.jpg"
+    }
+  ]
+}

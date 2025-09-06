@@ -60,3 +60,36 @@ func UploadFileURLPolicy(c *gin.Context) {
 func UploadFileURL(c *gin.Context) {
 
 }
+
+// GetDownloadURL 处理获取文件访问 URL（单个/批量）。
+func GetDownloadURL(c *gin.Context) {
+	l := log.Logger()
+
+	var req types.GetFilesURLRequest
+	if err := c.ShouldBind(&req); err != nil {
+		l.Warn().Err(err).Msg("invalid request body")
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+
+		return
+	}
+
+	// 至少需要一个对象
+	if len(req.Objects) == 0 {
+		l.Warn().Msg("no objects provided in request")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "no objects provided"})
+
+		return
+	}
+
+	svc := service.NewFileService(c.Request.Context())
+
+	resp, err := svc.PresignedGetURLs(c.Request.Context(), &req)
+	if err != nil {
+		l.Error().Err(err).Msg("failed to generate presigned get urls")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+}

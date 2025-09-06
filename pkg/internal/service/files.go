@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/google/uuid"
@@ -50,12 +51,10 @@ func NewFileService(c context.Context) *FileService {
 func (fs *FileService) PresignedPostURLsPolicy(ctx context.Context, user string,
 	req *types.UploadFilesRequestPolicy,
 ) (*types.UploadFilesResponsePolicy, error) {
-	cfg := fs.s3Client.GetConfig()
-	if len(cfg.Buckets) == 0 {
-		return nil, fmt.Errorf("no bucket configured")
+	bucket, err := fs.defaultBucket()
+	if err != nil {
+		return nil, err
 	}
-
-	bucket := cfg.Buckets[0]
 
 	var results = make([]types.PresignedUploadItem, 0, len(req.Files))
 
@@ -88,6 +87,94 @@ func (fs *FileService) PresignedPostURLsPolicy(ctx context.Context, user string,
 
 	return &types.UploadFilesResponsePolicy{
 		Results: results,
+	}, nil
+}
+
+// PresignedGetURLs 生成对象的预签名 GET 访问 URL（支持单个/批量）。
+func (fs *FileService) PresignedGetURLs(ctx context.Context, req *types.GetFilesURLRequest) (*types.GetFilesURLResponse, error) {
+	bucket, err := fs.defaultBucket()
+	if err != nil {
+		return nil, err
+	}
+
+	expiry := resolveGetExpiry(req)
+	results := make([]types.PresignedDownloadItem, 0, len(req.Objects))
+
+	for i := range req.Objects {
+		item := &req.Objects[i]
+
+		d, err := fs.presignGet(ctx, bucket, item, expiry)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, d)
+	}
+
+	return &types.GetFilesURLResponse{Results: results}, nil
+}
+
+// defaultBucket 获取默认 bucket。
+func (fs *FileService) defaultBucket() (string, error) {
+	cfg := fs.s3Client.GetConfig()
+	if len(cfg.Buckets) == 0 {
+		return "", fmt.Errorf("no bucket configured")
+	}
+
+	return cfg.Buckets[0], nil
+}
+
+// resolveGetExpiry 解析请求中指定的过期时间（秒），若未指定返回默认值。
+func resolveGetExpiry(req *types.GetFilesURLRequest) time.Duration {
+	if req != nil && req.ExpirySeconds > 0 {
+		return time.Duration(req.ExpirySeconds) * time.Second
+	}
+
+	return DefaultPresignedOpTimeout
+}
+
+// buildGetReqParams 构造可选响应头参数。
+func buildGetReqParams(item *types.GetFileURLItem) url.Values {
+	if item == nil {
+		return nil
+	}
+
+	var params url.Values
+
+	set := func(k, v string) {
+		if v == "" {
+			return
+		}
+
+		if params == nil {
+			params = url.Values{}
+		}
+
+		params.Set(k, v)
+	}
+
+	set("response-content-type", item.ResponseContentType)
+	set("response-content-disposition", item.ResponseContentDisposition)
+	set("response-cache-control", item.ResponseCacheControl)
+	set("response-content-language", item.ResponseContentLanguage)
+	set("response-content-encoding", item.ResponseContentEncoding)
+
+	return params
+}
+
+// presignGet 为单个对象生成预签名下载 URL。
+func (fs *FileService) presignGet(ctx context.Context, bucket string, item *types.GetFileURLItem, expiry time.Duration) (types.PresignedDownloadItem, error) {
+	params := buildGetReqParams(item)
+
+	urlObj, err := fs.s3Client.PresignedGetObject(ctx, bucket, item.ObjectKey, expiry, params)
+	if err != nil {
+		return types.PresignedDownloadItem{}, fmt.Errorf("presign get for %s: %w", item.ObjectKey, err)
+	}
+
+	return types.PresignedDownloadItem{
+		ObjectKey: item.ObjectKey,
+		GetURL:    urlObj.String(),
+		ExpiresIn: int(expiry.Seconds()),
 	}, nil
 }
 

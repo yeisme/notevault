@@ -23,7 +23,7 @@ func RegisterFilesRoutes(g *gin.RouterGroup) {
 		filesRoutes.DELETE("", handle.DefaultHandler)            // 删除文件 (单个/批量)
 		filesRoutes.POST("", handle.DefaultHandler)              // 更新文件 (单个/批量)
 		filesRoutes.POST("/download", handle.DefaultHandler)     // 下载文件 (单个/批量)
-		filesRoutes.POST("/download/url", handle.DefaultHandler) // 获取文件访问URL (单个/批量)
+		filesRoutes.POST("/download/url", handle.GetDownloadURL) // 获取文件访问URL (单个/批量)
 		filesRoutes.POST("/copy", handle.DefaultHandler)         // 复制文件 (单个/批量)
 		filesRoutes.POST("/move", handle.DefaultHandler)         // 移动文件 (单个/批量)
 
