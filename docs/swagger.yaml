@@ -1,0 +1,314 @@
+definitions:
+  types.GetFileURLItem:
+    properties:
+      object_key:
+        type: string
+      response_cache_control:
+        type: string
+      response_content_disposition:
+        type: string
+      response_content_encoding:
+        type: string
+      response_content_language:
+        type: string
+      response_content_type:
+        description: 以下为可选的响应头控制参数（S3 预签名支持的常见字段）
+        type: string
+    required:
+    - object_key
+    type: object
+  types.GetFilesURLRequest:
+    properties:
+      expiry_seconds:
+        description: 过期时间（秒），可选；缺省使用服务默认值
+        type: integer
+      objects:
+        description: 对象列表（支持单个/批量）
+        items:
+          $ref: '#/definitions/types.GetFileURLItem'
+        type: array
+    required:
+    - objects
+    type: object
+  types.GetFilesURLResponse:
+    properties:
+      results:
+        items:
+          $ref: '#/definitions/types.PresignedDownloadItem'
+        type: array
+    type: object
+  types.PresignedDownloadItem:
+    properties:
+      expires_in:
+        type: integer
+      get_url:
+        type: string
+      object_key:
+        type: string
+    type: object
+  types.PresignedPutItem:
+    properties:
+      expires_in:
+        description: 过期时间 (秒)
+        type: integer
+      object_key:
+        description: 对象键 (上传后的路径)
+        type: string
+      put_url:
+        description: 上传 URL
+        type: string
+    type: object
+  types.PresignedUploadItem:
+    properties:
+      expires_in:
+        description: 过期时间 (秒)
+        type: integer
+      form_data:
+        additionalProperties:
+          type: string
+        description: 表单数据
+        type: object
+      object_key:
+        description: 对象键 (上传后的路径)
+        type: string
+      put_url:
+        description: 上传 URL
+        type: string
+    type: object
+  types.UploadFileItem:
+    properties:
+      content_disposition:
+        description: 可选：内容处置
+        type: string
+      content_encoding:
+        description: 可选：内容编码
+        type: string
+      content_type:
+        description: 可选：内容类型
+        type: string
+      file_name:
+        type: string
+      key_starts_with:
+        description: 可选：对象键前缀
+        type: string
+      max_size:
+        description: 可选：最大文件大小（字节）
+        type: integer
+      min_size:
+        description: 可选：最小文件大小（字节）
+        type: integer
+      user_metadata:
+        additionalProperties:
+          type: string
+        description: 可选：用户元数据
+        type: object
+    type: object
+  types.UploadFilesRequest:
+    properties:
+      files:
+        items:
+          $ref: '#/definitions/types.UploadFileItem'
+        type: array
+    required:
+    - files
+    type: object
+  types.UploadFilesRequestPolicy:
+    properties:
+      files:
+        items:
+          $ref: '#/definitions/types.UploadFileItem'
+        type: array
+    required:
+    - files
+    type: object
+  types.UploadFilesResponse:
+    properties:
+      results:
+        items:
+          $ref: '#/definitions/types.PresignedPutItem'
+        type: array
+    type: object
+  types.UploadFilesResponsePolicy:
+    properties:
+      results:
+        items:
+          $ref: '#/definitions/types.PresignedUploadItem'
+        type: array
+    type: object
+info:
+  contact:
+    email: yefun2004@gmail.com.
+    name: yeisme
+  description: NoteVault 是一个安全的笔记和文件存储服务，提供用户注册、登录、笔记管理和文件上传等功能。
+  license:
+    name: MIT
+    url: https://opensource.org/license/mit/
+  title: NoteVault API
+  version: "1.0"
+paths:
+  /download/url:
+    post:
+      consumes:
+      - application/json
+      description: 为文件获取预签名的访问URL，支持单个或批量对象
+      parameters:
+      - description: 获取文件访问URL请求
+        in: body
+        name: objects
+        required: true
+        schema:
+          $ref: '#/definitions/types.GetFilesURLRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 预签名访问URL响应
+          schema:
+            $ref: '#/definitions/types.GetFilesURLResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: 服务器内部错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 获取文件访问URL
+      tags:
+      - 文件下载
+  /health/db:
+    get:
+      description: 检查数据库连接是否正常
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 数据库连接正常
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "503":
+          description: 数据库连接异常
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 数据库健康检查
+      tags:
+      - 健康检查
+  /health/mq:
+    get:
+      description: 检查消息队列连接是否正常
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 消息队列连接正常
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "503":
+          description: 消息队列连接异常
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 消息队列健康检查
+      tags:
+      - 健康检查
+  /health/s3:
+    get:
+      description: 检查S3/对象存储连接是否正常
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: S3连接正常
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "503":
+          description: S3连接异常
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: S3健康检查
+      tags:
+      - 健康检查
+  /upload/urls:
+    post:
+      consumes:
+      - application/json
+      description: 为文件上传生成预签名的PUT URL，不使用策略控制，客户端可直接PUT上传文件
+      parameters:
+      - description: 文件上传请求
+        in: body
+        name: files
+        required: true
+        schema:
+          $ref: '#/definitions/types.UploadFilesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 预签名URL响应
+          schema:
+            $ref: '#/definitions/types.UploadFilesResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: 服务器内部错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 生成预签名PUT上传URL
+      tags:
+      - 文件上传
+  /upload/urls/policy:
+    post:
+      consumes:
+      - application/json
+      description: 为文件上传生成预签名的POST URL，使用策略控制文件类型、大小等限制
+      parameters:
+      - description: 带策略的文件上传请求
+        in: body
+        name: files
+        required: true
+        schema:
+          $ref: '#/definitions/types.UploadFilesRequestPolicy'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 预签名URL和表单数据响应
+          schema:
+            $ref: '#/definitions/types.UploadFilesResponsePolicy'
+        "400":
+          description: 请求参数错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: 服务器内部错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 生成预签名POST上传URL
+      tags:
+      - 文件上传
+swagger: "2.0"

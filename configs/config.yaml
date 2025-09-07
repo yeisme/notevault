@@ -71,7 +71,7 @@ tracing:
 
 # 监控指标配置
 metrics:
-  enabled: true
+  enabled: false
   service_name: "notevault"
   service_version: "1.0.0"
   exporter_type: "prometheus"

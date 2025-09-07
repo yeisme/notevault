@@ -24,6 +24,7 @@ import (
 	"github.com/yeisme/notevault/pkg/tracing"
 )
 
+// App 定义应用程序的主要结构.
 type App struct {
 	mainServer    *http.Server
 	metricsServer *http.Server

@@ -12,6 +12,17 @@ import (
 )
 
 // UploadFileURLPolicy 处理上传文件请求：生成预签名 URL 或直接上传 POST 带策略.
+//
+//	@Summary		生成预签名POST上传URL
+//	@Description	为文件上传生成预签名的POST URL，使用策略控制文件类型、大小等限制
+//	@Tags			文件上传
+//	@Accept			json
+//	@Produce		json
+//	@Param			files	body		types.UploadFilesRequestPolicy	true	"带策略的文件上传请求"
+//	@Success		200		{object}	types.UploadFilesResponsePolicy	"预签名URL和表单数据响应"
+//	@Failure		400		{object}	map[string]string				"请求参数错误"
+//	@Failure		500		{object}	map[string]string				"服务器内部错误"
+//	@Router			/api/v1/files/upload/urls/policy [post]
 func UploadFileURLPolicy(c *gin.Context) {
 	var req types.UploadFilesRequestPolicy
 	if err := c.ShouldBind(&req); err != nil {
@@ -24,11 +35,22 @@ func UploadFileURLPolicy(c *gin.Context) {
 
 	handleUpload(c, &req, func(ctx context.Context, user string, r any) (any, error) {
 		svc := service.NewFileService(ctx)
-		return svc.PresignedPostURLsPolicy(ctx, user, r.(*types.UploadFilesRequestPolicy)) //nolint
+		return svc.PresignedPostURLsPolicy(ctx, user, r.(*types.UploadFilesRequestPolicy)) //nolint:errcheck
 	}, "presigned URL")
 }
 
 // UploadFileURL 处理文件上传请求：生成预签名 URL PUT 不带策略.
+//
+//	@Summary		生成预签名PUT上传URL
+//	@Description	为文件上传生成预签名的PUT URL，不使用策略控制，客户端可直接PUT上传文件
+//	@Tags			文件上传
+//	@Accept			json
+//	@Produce		json
+//	@Param			files	body		types.UploadFilesRequest	true	"文件上传请求"
+//	@Success		200		{object}	types.UploadFilesResponse	"预签名URL响应"
+//	@Failure		400		{object}	map[string]string			"请求参数错误"
+//	@Failure		500		{object}	map[string]string			"服务器内部错误"
+//	@Router			/api/v1/files/upload/urls [post]
 func UploadFileURL(c *gin.Context) {
 	var req types.UploadFilesRequest
 	if err := c.ShouldBind(&req); err != nil {
@@ -41,11 +63,22 @@ func UploadFileURL(c *gin.Context) {
 
 	handleUpload(c, &req, func(ctx context.Context, user string, r any) (any, error) {
 		svc := service.NewFileService(ctx)
-		return svc.PresignedPutURLs(ctx, user, r.(*types.UploadFilesRequest)) //nolint
+		return svc.PresignedPutURLs(ctx, user, r.(*types.UploadFilesRequest)) //nolint:errcheck
 	}, "presigned PUT URL")
 }
 
 // GetDownloadURL 处理获取文件访问 URL（单个/批量）.
+//
+//	@Summary		获取文件访问URL
+//	@Description	为文件获取预签名的访问URL，支持单个或批量对象
+//	@Tags			文件下载
+//	@Accept			json
+//	@Produce		json
+//	@Param			objects	body		types.GetFilesURLRequest	true	"获取文件访问URL请求"
+//	@Success		200		{object}	types.GetFilesURLResponse	"预签名访问URL响应"
+//	@Failure		400		{object}	map[string]string			"请求参数错误"
+//	@Failure		500		{object}	map[string]string			"服务器内部错误"
+//	@Router			/api/v1/files/download/url [post]
 func GetDownloadURL(c *gin.Context) {
 	l := log.Logger()
 
