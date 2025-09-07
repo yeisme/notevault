@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 
@@ -64,7 +65,8 @@ func NewApp(configPath string) *App {
 	engine.Use(
 		gin.Logger(),
 		gin.Recovery(),
-		middleware.CORSMiddleware(),
+		gzip.Gzip(gzip.DefaultCompression),
+		middleware.CORSMiddleware(config.Server),
 		middleware.TracingMiddleware(),
 		middleware.PrometheusMiddleware(),
 		middleware.StorageMiddleware(manager),

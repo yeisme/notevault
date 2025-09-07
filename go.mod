@@ -6,6 +6,8 @@ require (
 	github.com/ThreeDotsLabs/watermill v1.5.1
 	github.com/ThreeDotsLabs/watermill-nats/v2 v2.1.3
 	github.com/fsnotify/fsnotify v1.9.0
+	github.com/gin-contrib/cors v1.7.6
+	github.com/gin-contrib/gzip v1.2.3
 	github.com/gin-gonic/gin v1.10.1
 	github.com/glebarez/sqlite v1.11.0
 	github.com/go-playground/validator/v10 v10.27.0

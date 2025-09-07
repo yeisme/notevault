@@ -1,23 +1,23 @@
 package middleware
 
 import (
-	"net/http"
-
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+
+	"github.com/yeisme/notevault/pkg/configs"
 )
 
 // CORSMiddleware CORS中间件.
-func CORSMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+func CORSMiddleware(cfg configs.ServerConfig) gin.HandlerFunc {
+	config := cors.DefaultConfig()
+	config.AllowOrigins = []string{"*"}
 
-		if c.Request.Method == http.MethodOptions {
-			c.AbortWithStatus(http.StatusNoContent)
-			return
-		}
+	config.AllowWebSockets = true
+	config.AllowFiles = true
 
-		c.Next()
+	if cfg.Debug {
+		config.AllowAllOrigins = true
 	}
+
+	return cors.New(config)
 }
