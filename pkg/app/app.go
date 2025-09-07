@@ -15,6 +15,7 @@ import (
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/yeisme/notevault/pkg/api"
 	"github.com/yeisme/notevault/pkg/configs"
@@ -23,6 +24,11 @@ import (
 	"github.com/yeisme/notevault/pkg/metrics"
 	"github.com/yeisme/notevault/pkg/middleware"
 	"github.com/yeisme/notevault/pkg/tracing"
+)
+
+const (
+	// DefaultShutdownTimeout 定义服务器关闭的默认超时时间.
+	DefaultShutdownTimeout = 30 * time.Second
 )
 
 // App 定义应用程序的主要结构.
@@ -102,42 +108,41 @@ func NewApp(configPath string) *App {
 
 // Run 启动主服务器和（可选的）监控服务器.
 func (a *App) Run() error {
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
+	g, _ := errgroup.WithContext(contextPkg.Background())
 
-	go func() {
-		if a.metricsServer == nil {
-			return
-		}
+	// 启动指标服务器
+	if a.metricsServer != nil {
+		g.Go(func() error {
+			a.log.Info().Msgf("Metrics server started on %s", a.config.Metrics.Endpoint)
+			return a.metricsServer.ListenAndServe()
+		})
+	}
 
-		a.log.Info().Msgf("Metrics server started on %s", a.config.Metrics.Endpoint)
+	// 启动主服务器
+	g.Go(func() error {
+		a.log.Info().Msgf("Starting server on %s:%d", a.config.Server.Host, a.config.Server.Port)
+		return a.mainServer.ListenAndServe()
+	})
 
-		if err := a.metricsServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			fmt.Printf("metrics server error: %v\n", err)
-		}
-	}()
+	// 等待信号
+	g.Go(func() error {
+		signalChan := make(chan os.Signal, 1)
+		signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
+		<-signalChan
+		a.shutdown()
 
-	a.log.Info().Msgf("Starting server on %s:%d", a.config.Server.Host, a.config.Server.Port)
+		return nil
+	})
 
-	go func() {
-		if err := a.mainServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			fmt.Printf("main server error: %v\n", err)
-		}
-	}()
-
-	<-signalChan
-
-	a.shutdown()
-
-	return nil
+	// 等待所有 goroutine 退出
+	return g.Wait()
 }
 
 // shutdown 优雅关闭服务器和资源.
 func (a *App) shutdown() {
 	a.log.Info().Msg("Shutdown signal received, shutting down servers...")
 
-	const DefaultShutdownTimeout = 30 * time.Second
-	// 创建关闭上下文，设置30秒超时
+	// 创建关闭上下文
 	shutdownCtx, shutdownCancel := contextPkg.WithTimeout(contextPkg.Background(), DefaultShutdownTimeout)
 	defer shutdownCancel()
 
