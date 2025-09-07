@@ -43,6 +43,8 @@ linters:
       lines: 120
       statements: 100
       ignore-comments: true
+    cyclop:
+      max-complexity: 20
 
 formatters:
   enable:

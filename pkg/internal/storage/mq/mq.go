@@ -1,10 +1,10 @@
-// Package mq 提供基于 Watermill 库的统一消息队列操作接口。
-// 支持发布/订阅模式，并通过工厂模式抽象不同的 MQ 实现。
+// Package mq 提供基于 Watermill 库的统一消息队列操作接口.
+// 支持发布/订阅模式，并通过工厂模式抽象不同的 MQ 实现.
 //
 // 支持的 MQ 类型：
 //   - NATS（支持 JetStream）
 //
-// 该包提供封装了 Publisher 和 Subscriber 的 Client，以及便捷的消息发布和订阅方法。
+// 该包提供封装了 Publisher 和 Subscriber 的 Client，以及便捷的消息发布和订阅方法.
 //
 // 使用示例：
 //

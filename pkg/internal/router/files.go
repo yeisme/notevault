@@ -11,8 +11,9 @@ func RegisterFilesRoutes(g *gin.RouterGroup) {
 	// 文件操作路由
 	filesRoutes := g.Group("/files")
 	{
-		// 上传文件 (生成预签名 URL,带有策略)
+		// 上传文件 (生成预签名 PUT URL,不带有策略)
 		filesRoutes.POST("/upload/urls", handle.UploadFileURL)
+		// 上传文件 (生成预签名 POST URL,带有策略)
 		filesRoutes.POST("/upload/urls/policy", handle.UploadFileURLPolicy)
 		// 列表/搜索
 		filesRoutes.POST("/search", handle.DefaultHandler)

@@ -10,6 +10,16 @@ type UploadFilesResponsePolicy struct {
 	Results []PresignedUploadItem `json:"results"`
 }
 
+// UploadFilesRequest 批量文件上传请求 (PUT 不带策略).
+type UploadFilesRequest struct {
+	Files []UploadFileItem `binding:"required" json:"files"`
+}
+
+// UploadFilesResponse 预签名上传结果 (PUT).
+type UploadFilesResponse struct {
+	Results []PresignedPutItem `json:"results"`
+}
+
 // UploadFileItem 单个文件上传请求.
 type UploadFileItem struct {
 	FileName           string            `json:"file_name"`
@@ -30,6 +40,13 @@ type PresignedUploadItem struct {
 	ExpiresIn int               `json:"expires_in"` // 过期时间 (秒)
 }
 
+// PresignedPutItem 预签名 PUT 上传单个结果项.
+type PresignedPutItem struct {
+	ObjectKey string `json:"object_key"` // 对象键 (上传后的路径)
+	PutURL    string `json:"put_url"`    // 上传 URL
+	ExpiresIn int    `json:"expires_in"` // 过期时间 (秒)
+}
+
 // GetFilesURLRequest 批量获取文件访问 URL 请求.
 type GetFilesURLRequest struct {
 	// 对象列表（支持单个/批量）
@@ -38,7 +55,7 @@ type GetFilesURLRequest struct {
 	ExpirySeconds int `json:"expiry_seconds,omitempty"`
 }
 
-// GetFileURLItem 单个对象的访问 URL 请求项。
+// GetFileURLItem 单个对象的访问 URL 请求项.
 type GetFileURLItem struct {
 	ObjectKey string `binding:"required" json:"object_key"`
 
@@ -50,12 +67,12 @@ type GetFileURLItem struct {
 	ResponseContentEncoding    string `json:"response_content_encoding,omitempty"`
 }
 
-// GetFilesURLResponse 批量获取文件访问 URL 响应。
+// GetFilesURLResponse 批量获取文件访问 URL 响应.
 type GetFilesURLResponse struct {
 	Results []PresignedDownloadItem `json:"results"`
 }
 
-// PresignedDownloadItem 预签名下载结果项。
+// PresignedDownloadItem 预签名下载结果项.
 type PresignedDownloadItem struct {
 	ObjectKey string `json:"object_key"`
 	GetURL    string `json:"get_url"`

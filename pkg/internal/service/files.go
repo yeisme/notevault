@@ -89,7 +89,40 @@ func (fs *FileService) PresignedPostURLsPolicy(ctx context.Context, user string,
 	}, nil
 }
 
-// PresignedGetURLs 生成对象的预签名 GET 访问 URL（支持单个/批量）。
+// PresignedPutURLs 生成预签名 PUT URLs，用于客户端批量直接上传，不使用策略.
+func (fs *FileService) PresignedPutURLs(ctx context.Context, user string,
+	req *types.UploadFilesRequest,
+) (*types.UploadFilesResponse, error) {
+	bucket, err := fs.defaultBucket()
+	if err != nil {
+		return nil, err
+	}
+
+	var results = make([]types.PresignedPutItem, 0, len(req.Files))
+
+	for _, file := range req.Files {
+		// 构建对象键
+		objectKey := buildObjectKey(user, &file)
+
+		// 生成预签名 PUT URL
+		url, err := fs.s3Client.PresignedPutObject(ctx, bucket, objectKey, DefaultPresignedOpTimeout)
+		if err != nil {
+			return nil, fmt.Errorf("presign put for %s: %w", file.FileName, err)
+		}
+
+		results = append(results, types.PresignedPutItem{
+			ObjectKey: objectKey,
+			PutURL:    url.String(),
+			ExpiresIn: int(DefaultPresignedOpTimeout.Seconds()),
+		})
+	}
+
+	return &types.UploadFilesResponse{
+		Results: results,
+	}, nil
+}
+
+// PresignedGetURLs 生成对象的预签名 GET 访问 URL（支持单个/批量）.
 func (fs *FileService) PresignedGetURLs(ctx context.Context, req *types.GetFilesURLRequest) (*types.GetFilesURLResponse, error) {
 	bucket, err := fs.defaultBucket()
 	if err != nil {
@@ -113,7 +146,7 @@ func (fs *FileService) PresignedGetURLs(ctx context.Context, req *types.GetFiles
 	return &types.GetFilesURLResponse{Results: results}, nil
 }
 
-// defaultBucket 获取默认 bucket。
+// defaultBucket 获取默认 bucket.
 func (fs *FileService) defaultBucket() (string, error) {
 	cfg := fs.s3Client.GetConfig()
 	if len(cfg.Buckets) == 0 {
@@ -123,7 +156,7 @@ func (fs *FileService) defaultBucket() (string, error) {
 	return cfg.Buckets[0], nil
 }
 
-// resolveGetExpiry 解析请求中指定的过期时间（秒），若未指定返回默认值。
+// resolveGetExpiry 解析请求中指定的过期时间（秒），若未指定返回默认值.
 func resolveGetExpiry(req *types.GetFilesURLRequest) time.Duration {
 	if req != nil && req.ExpirySeconds > 0 {
 		return time.Duration(req.ExpirySeconds) * time.Second
@@ -132,7 +165,7 @@ func resolveGetExpiry(req *types.GetFilesURLRequest) time.Duration {
 	return DefaultPresignedOpTimeout
 }
 
-// buildGetReqParams 构造可选响应头参数。
+// buildGetReqParams 构造可选响应头参数.
 func buildGetReqParams(item *types.GetFileURLItem) url.Values {
 	if item == nil {
 		return nil
@@ -161,7 +194,7 @@ func buildGetReqParams(item *types.GetFileURLItem) url.Values {
 	return params
 }
 
-// presignGet 为单个对象生成预签名下载 URL。
+// presignGet 为单个对象生成预签名下载 URL.
 func (fs *FileService) presignGet(ctx context.Context, bucket string, item *types.GetFileURLItem, expiry time.Duration) (types.PresignedDownloadItem, error) {
 	params := buildGetReqParams(item)
 
