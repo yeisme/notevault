@@ -9,6 +9,7 @@ import (
 
 	"github.com/yeisme/notevault/pkg/internal/storage"
 	dbc "github.com/yeisme/notevault/pkg/internal/storage/db"
+	kvc "github.com/yeisme/notevault/pkg/internal/storage/kv"
 	mqc "github.com/yeisme/notevault/pkg/internal/storage/mq"
 	s3c "github.com/yeisme/notevault/pkg/internal/storage/s3"
 )
@@ -55,6 +56,15 @@ func GetDBClient(ctx context.Context) *dbc.Client {
 func GetMQClient(ctx context.Context) *mqc.Client {
 	if mgr := GetManager(ctx); mgr != nil {
 		return mgr.GetMQClient()
+	}
+
+	return nil
+}
+
+// GetKVClient 从 context 中获取 KV 客户端.
+func GetKVClient(ctx context.Context) *kvc.Client {
+	if mgr := GetManager(ctx); mgr != nil {
+		return mgr.GetKVClient()
 	}
 
 	return nil

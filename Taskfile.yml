@@ -8,12 +8,12 @@ tasks:
 
   build:
     cmds:
-      - go build ./cmd/notevault
+      - go build -tags="sonic,avx" ./cmd/notevault
     desc: Build the Go application
 
   build:release:
     cmds:
-      - go build -ldflags="-s -w" -o ./bin/notevault{{ exeExt }} ./cmd/notevault
+      - go build -tags="sonic,avx" -ldflags="-s -w" -o ./bin/notevault{{ exeExt }} ./cmd/notevault
     desc: Build the Go application for release
 
   lint:
