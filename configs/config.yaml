@@ -46,6 +46,7 @@ mq:
   max_reconnects: 5
   reconnect_wait: 5
   enable_metrics: true
+  endpoint: ":9092"
 
 # 日志配置
 log:

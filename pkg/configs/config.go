@@ -63,6 +63,7 @@ type (
 		DB      DBConfig      `mapstructure:"db"`      // DBConfig 数据库配置
 		S3      S3Config      `mapstructure:"s3"`      // S3Config 对象存储配置
 		MQ      MQConfig      `mapstructure:"mq"`      // MQConfig 消息队列配置
+		KV      KVConfig      `mapstructure:"kv"`      // KVConfig 键值存储配置
 		Server  ServerConfig  `mapstructure:"server"`  // ServerConfig 其它服务器配置，日志级别、服务器端口等
 		Log     LogConfig     `mapstructure:"log"`     // LogConfig 日志相关配置
 		Tracing TracingConfig `mapstructure:"tracing"` // TracingConfig 分布式追踪配置
@@ -138,6 +139,7 @@ func setAllDefaults(v *viper.Viper) {
 		dbConfig      DBConfig
 		s3Config      S3Config
 		mqConfig      MQConfig
+		kvConfig      KVConfig
 		logConfig     LogConfig
 		tracingConfig TracingConfig
 		metricsConfig MetricsConfig
@@ -147,6 +149,7 @@ func setAllDefaults(v *viper.Viper) {
 	dbConfig.setDefaults(v)
 	s3Config.setDefaults(v)
 	mqConfig.setDefaults(v)
+	kvConfig.setDefaults(v)
 	logConfig.setDefaults(v)
 	tracingConfig.setDefaults(v)
 	metricsConfig.setDefaults(v)

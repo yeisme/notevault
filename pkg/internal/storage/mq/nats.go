@@ -37,14 +37,14 @@ func init() {
 // buildNatsOptions 构建 NATS 连接选项.
 func buildNatsOptions(cfg *configs.MQConfig) []nc.Option {
 	opts := []nc.Option{
-		nc.Name(cfg.ClientID),
-		nc.MaxReconnects(cfg.MaxReconnects),
-		nc.ReconnectWait(time.Duration(cfg.ReconnectWait) * time.Second),
-		nc.PingInterval(time.Duration(cfg.PingInterval) * time.Second),
-		nc.ReconnectBufSize(cfg.BufferSize),
-		nc.DrainTimeout(DefaultDrainTimeout),
-		nc.FlusherTimeout(DefaultStreamMaxMsgs),
-		nc.RetryOnFailedConnect(true),
+		nc.Name(cfg.ClientID),                                            // 客户端名称
+		nc.MaxReconnects(cfg.MaxReconnects),                              // 最大重连次数
+		nc.ReconnectWait(time.Duration(cfg.ReconnectWait) * time.Second), // 重连等待时间
+		nc.PingInterval(time.Duration(cfg.PingInterval) * time.Second),   // 心跳间隔
+		nc.ReconnectBufSize(cfg.BufferSize),                              // 重连缓冲区大小
+		nc.DrainTimeout(DefaultDrainTimeout),                             // 优雅关闭超时
+		nc.FlusherTimeout(DefaultStreamMaxMsgs),                          // 刷新超时
+		nc.RetryOnFailedConnect(true),                                    // 连接失败时重试
 	}
 
 	// 添加认证选项

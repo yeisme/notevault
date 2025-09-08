@@ -16,6 +16,7 @@
 //	s3Client := mgr.GetS3Client()
 //	dbClient := mgr.GetDBClient()
 //	mqClient := mgr.GetMQClient()
+//	kvClient := mgr.GetKVClient()
 package storage
 
 import (
@@ -24,6 +25,7 @@ import (
 	"sync"
 
 	dbc "github.com/yeisme/notevault/pkg/internal/storage/db"
+	kvc "github.com/yeisme/notevault/pkg/internal/storage/kv"
 	mqc "github.com/yeisme/notevault/pkg/internal/storage/mq"
 	s3c "github.com/yeisme/notevault/pkg/internal/storage/s3"
 	nlog "github.com/yeisme/notevault/pkg/log"
@@ -34,6 +36,7 @@ type Manager struct {
 	s3 *s3c.Client
 	db *dbc.Client
 	mq *mqc.Client
+	kv *kvc.Client
 }
 
 var (
@@ -72,8 +75,15 @@ func Init(ctx context.Context) (*Manager, error) {
 			m.mq = mqMgr
 		}
 
+		if kvMgr, e := kvc.NewKVClient(ctx); e != nil {
+			nlog.Logger().Error().Err(e).Msg("init kv failed")
+			collectedErrs = append(collectedErrs, e)
+		} else {
+			m.kv = kvMgr
+		}
+
 		// 仅当至少有一个成功时才赋值 mgr；否则保持 nil 便于上层感知
-		if m.db != nil || m.s3 != nil || m.mq != nil {
+		if m.db != nil || m.s3 != nil || m.mq != nil || m.kv != nil {
 			mgr = m
 
 			nlog.Logger().Info().Msg("storage manager initialized (partial possible)")
@@ -104,6 +114,11 @@ func (m *Manager) GetMQClient() *mqc.Client {
 	return m.mq
 }
 
+// GetKVClient 获取 KV 客户端.
+func (m *Manager) GetKVClient() *kvc.Client {
+	return m.kv
+}
+
 // Close 关闭所有存储客户端连接，返回可能的错误（聚合）.
 // TODO: 增加 Close 方法，关闭所有存储客户端连接. 在优雅关闭时调用.
 func (m *Manager) Close() error {
@@ -123,6 +138,12 @@ func (m *Manager) Close() error {
 
 	if m.mq != nil {
 		if err := m.mq.Close(); err != nil {
+			collectedErrs = append(collectedErrs, err)
+		}
+	}
+
+	if m.kv != nil {
+		if err := m.kv.Close(); err != nil {
 			collectedErrs = append(collectedErrs, err)
 		}
 	}
