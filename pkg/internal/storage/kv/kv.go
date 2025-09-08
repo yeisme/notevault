@@ -9,6 +9,7 @@ import (
 	"github.com/yeisme/notevault/pkg/configs"
 )
 
+// Client 提供对 KVStore 的封装，简化使用.
 type Client struct {
 	KVStore
 }
