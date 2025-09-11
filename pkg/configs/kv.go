@@ -6,7 +6,7 @@ import (
 
 // KVConfig 键值存储配置.
 type KVConfig struct {
-	Type       string             `mapstructure:"type"       rule:"oneof=memory,redis,nats,groupcache"`
+	Type       string             `mapstructure:"type"       rule:"oneof=memory redis nats groupcache"`
 	Redis      RedisKVConfig      `mapstructure:"redis"`
 	NATS       NATSKVConfig       `mapstructure:"nats"`
 	Groupcache GroupcacheKVConfig `mapstructure:"groupcache"`
@@ -32,7 +32,7 @@ type GroupcacheKVConfig struct {
 	Name       string   `mapstructure:"name"        rule:"required"`
 	CacheBytes int64    `mapstructure:"cache_bytes" rule:"min=1048576"` // 最小1MB
 	Peers      []string `mapstructure:"peers"`
-	Self       string   `mapstructure:"self"        rule:"hostname_port"`
+	Self       string   `mapstructure:"self"        rule:"url"`
 }
 
 // GetKVType 返回当前配置的 KV 类型.

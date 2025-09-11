@@ -114,14 +114,26 @@ func (a *App) Run() error {
 	if a.metricsServer != nil {
 		g.Go(func() error {
 			a.log.Info().Msgf("Metrics server started on %s", a.config.Metrics.Endpoint)
-			return a.metricsServer.ListenAndServe()
+
+			err := a.metricsServer.ListenAndServe()
+			if err != nil && err != http.ErrServerClosed {
+				return err
+			}
+
+			return nil
 		})
 	}
 
 	// 启动主服务器
 	g.Go(func() error {
 		a.log.Info().Msgf("Starting server on %s:%d", a.config.Server.Host, a.config.Server.Port)
-		return a.mainServer.ListenAndServe()
+
+		err := a.mainServer.ListenAndServe()
+		if err != nil && err != http.ErrServerClosed {
+			return err
+		}
+
+		return nil
 	})
 
 	// 等待信号
@@ -147,13 +159,13 @@ func (a *App) shutdown() {
 	defer shutdownCancel()
 
 	// 优雅关闭主服务器
-	if err := a.mainServer.Shutdown(shutdownCtx); err != nil {
+	if err := a.mainServer.Shutdown(shutdownCtx); err != nil && err != http.ErrServerClosed {
 		a.log.Error().Err(err).Msg("Error shutting down main server")
 	}
 
 	// 优雅关闭监控服务器
 	if a.metricsServer != nil {
-		if err := a.metricsServer.Shutdown(shutdownCtx); err != nil {
+		if err := a.metricsServer.Shutdown(shutdownCtx); err != nil && err != http.ErrServerClosed {
 			a.log.Error().Err(err).Msg("Error shutting down metrics server")
 		}
 	}

@@ -75,7 +75,7 @@ func Init(ctx context.Context) (*Manager, error) {
 			m.mq = mqMgr
 		}
 
-		if kvMgr, e := kvc.NewKVClient(ctx); e != nil {
+		if kvMgr, e := kvc.New(ctx); e != nil {
 			nlog.Logger().Error().Err(e).Msg("init kv failed")
 			collectedErrs = append(collectedErrs, e)
 		} else {

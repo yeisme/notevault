@@ -70,11 +70,24 @@ func NewKVStore(ctx context.Context, kvType KVType, config any) (KVStore, error)
 	return factory(ctx, config)
 }
 
-// NewKVClient 创建并返回一个新的 KVClient 实例.
-func NewKVClient(ctx context.Context) (*Client, error) {
+// New 创建并返回一个新的 KVClient 实例.
+func New(ctx context.Context) (*Client, error) {
 	cfg := configs.GetConfig().KV
 
-	store, err := NewKVStore(ctx, KVType(cfg.Type), cfg)
+	var config any
+
+	switch KVType(cfg.Type) {
+	case KVTypeRedis:
+		config = &cfg.Redis
+	case KVTypeNATS:
+		config = &cfg.NATS
+	case KVTypeGroupcache:
+		config = &cfg.Groupcache
+	default:
+		config = &cfg
+	}
+
+	store, err := NewKVStore(ctx, KVType(cfg.Type), config)
 	if err != nil {
 		return nil, err
 	}
