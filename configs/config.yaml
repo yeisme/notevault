@@ -37,7 +37,7 @@ s3:
 
 # 消息队列配置
 mq:
-  type: "nats"
+  type: "nats"  # 支持: nats, redis
   url: "localhost:4222"
   user: ""
   password: ""
@@ -47,6 +47,10 @@ mq:
   reconnect_wait: 5
   enable_metrics: true
   endpoint: ":9092"
+  # Redis 配置（当 type 为 redis 时使用）
+  redis_addr: "localhost:6379"
+  redis_password: ""
+  redis_db: 0
 
 # 日志配置
 log:
@@ -84,3 +88,21 @@ metrics:
     service: "notevault"
     version: "1.0.0"
   pprof: true
+
+# 键值存储配置
+kv:
+  type: "memory"  # 支持: memory, redis, nats, groupcache
+  # redis:
+  #   addr: "localhost:6379"
+  #   password: ""
+  #   db: 0
+  # nats:
+  #   url: "localhost:4222"
+  #   user: ""
+  #   password: ""
+  #   bucket: "notevault-kv"
+  # groupcache:
+  #   name: "notevault-cache"
+  #   cache_bytes: 536870912  # 512MB
+  #   peers: []
+  #   self: "http://localhost:8080"

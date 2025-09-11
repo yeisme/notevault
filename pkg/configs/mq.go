@@ -8,7 +8,8 @@ import (
 type MQType string
 
 const (
-	MQTypeNATS MQType = "nats"
+	MQTypeNATS  MQType = "nats"
+	MQTypeRedis MQType = "redis"
 
 	DefaultMQURL         = "localhost:4222"
 	DefaultMQUser        = ""
@@ -41,7 +42,7 @@ const (
 
 // MQConfig 消息队列配置.
 type MQConfig struct {
-	Type          MQType `mapstructure:"type"           rule:"oneof=nats"`
+	Type          MQType `mapstructure:"type"           rule:"oneof=nats redis"`
 	URL           string `mapstructure:"url"            rule:"hostname_port"`
 	User          string `mapstructure:"user"`
 	Password      string `mapstructure:"password"`
@@ -83,6 +84,10 @@ type MQConfig struct {
 	// 集群和扩展配置
 	ClusterURLs []string `mapstructure:"cluster_urls"`
 	LoadBalance bool     `mapstructure:"load_balance"`
+	// Redis 配置
+	RedisAddr     string `mapstructure:"redis_addr"     rule:"hostname_port"`
+	RedisPassword string `mapstructure:"redis_password"`
+	RedisDB       int    `mapstructure:"redis_db"       rule:"min=0,max=15"`
 	// 启动监控
 	EnableMetrics bool   `mapstructure:"enable_metrics"`
 	Endpoint      string `mapstructure:"endpoint"`
@@ -143,6 +148,11 @@ func (c *MQConfig) setDefaults(v *viper.Viper) {
 	// 集群和扩展默认值
 	v.SetDefault("mq.cluster_urls", []string{})
 	v.SetDefault("mq.load_balance", true)
+
+	// Redis 默认值
+	v.SetDefault("mq.redis_addr", "localhost:6379")
+	v.SetDefault("mq.redis_password", "")
+	v.SetDefault("mq.redis_db", 0)
 
 	// 启动监控默认值
 	v.SetDefault("mq.enable_metrics", true)

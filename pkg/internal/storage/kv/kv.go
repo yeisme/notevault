@@ -37,6 +37,7 @@ const (
 	KVTypeRedis      KVType = "redis"
 	KVTypeNATS       KVType = "nats"
 	KVTypeGroupcache KVType = "groupcache"
+	KVTypeMemory     KVType = "memory"
 )
 
 // KVFactory 定义创建 KVStore 的工厂函数类型.
@@ -83,6 +84,8 @@ func New(ctx context.Context) (*Client, error) {
 		config = &cfg.NATS
 	case KVTypeGroupcache:
 		config = &cfg.Groupcache
+	case KVTypeMemory:
+		config = nil
 	default:
 		config = &cfg
 	}
