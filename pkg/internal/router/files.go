@@ -20,8 +20,8 @@ func RegisterFilesRoutes(g *gin.RouterGroup) {
 			uploadGroup.POST("/urls/policy", handle.UploadFileURLPolicy) // POST方式，带策略
 
 			// 直接上传小文件（适用于小文件场景）
-			uploadGroup.POST("/single", handle.DefaultHandler) // 单个小文件
-			uploadGroup.POST("/batch", handle.DefaultHandler)  // 批量小文件
+			uploadGroup.POST("/single", handle.UploadSingleFile) // 单个小文件
+			uploadGroup.POST("/batch", handle.UploadBatchFiles)  // 批量小文件
 		}
 
 		// ===== 文件查询相关路由 =====

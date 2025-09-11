@@ -78,3 +78,41 @@ type PresignedDownloadItem struct {
 	GetURL    string `json:"get_url"`
 	ExpiresIn int    `json:"expires_in"`
 }
+
+// UploadFileMetadata 上传文件元数据.
+type UploadFileMetadata struct {
+	FileName    string            `form:"file_name"    json:"file_name,omitempty"`    // 可选：文件名
+	Tags        map[string]string `form:"tags"         json:"tags,omitempty"`         // 可选：标签
+	Description string            `form:"description"  json:"description,omitempty"`  // 可选：描述
+	ContentType string            `form:"content_type" json:"content_type,omitempty"` // 可选：内容类型
+	Category    string            `form:"category"     json:"category,omitempty"`     // 可选：分类
+	Folder      string            `form:"folder"       json:"folder,omitempty"`       // 可选：文件夹
+	IsPublic    bool              `form:"is_public"    json:"is_public,omitempty"`    // 可选：是否公开
+	ExpiryDays  int               `form:"expiry_days"  json:"expiry_days,omitempty"`  // 可选：过期天数
+}
+
+// UploadFileResponse 单个文件上传响应.
+type UploadFileResponse struct {
+	ObjectKey    string            `json:"object_key"`
+	Hash         string            `json:"hash"`
+	Size         int64             `json:"size"`
+	ETag         string            `json:"etag,omitempty"`
+	LastModified string            `json:"last_modified,omitempty"`
+	VersionID    string            `json:"version_id,omitempty"`
+	Bucket       string            `json:"bucket,omitempty"`
+	Location     string            `json:"location,omitempty"`
+	FileName     string            `json:"file_name,omitempty"`
+	Tags         map[string]string `json:"tags,omitempty"`
+	Description  string            `json:"description,omitempty"`
+	ContentType  string            `json:"content_type,omitempty"`
+	Success      bool              `json:"success"`
+	Error        string            `json:"error,omitempty"`
+}
+
+// UploadBatchFilesResponse 批量文件上传响应.
+type UploadBatchFilesResponse struct {
+	Results    []UploadFileResponse `json:"results"`
+	Total      int                  `json:"total"`
+	Successful int                  `json:"successful"`
+	Failed     int                  `json:"failed"`
+}
