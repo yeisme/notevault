@@ -34,3 +34,7 @@ logs/
 *.log
 
 .task/
+
+*.db
+*.sqlite
+*.sqlite3

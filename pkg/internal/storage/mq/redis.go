@@ -2,6 +2,7 @@ package mq
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/ThreeDotsLabs/watermill"
@@ -39,14 +40,19 @@ func init() {
 // redisFactory 创建 Redis Publisher & Subscriber.
 func redisFactory(
 	ctx context.Context,
-	cfg *configs.MQConfig,
+	config any,
 	logger watermill.LoggerAdapter) (
 	message.Publisher, message.Subscriber, error) {
+	cfg, ok := config.(*configs.MQConfig)
+	if !ok {
+		return nil, nil, fmt.Errorf("invalid Redis config")
+	}
+
 	// 创建 Redis 客户端
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     cfg.RedisAddr,
-		Password: cfg.RedisPassword,
-		DB:       cfg.RedisDB,
+		Addr:     cfg.Redis.Addr,
+		Password: cfg.Redis.Password,
+		DB:       cfg.Redis.DB,
 	})
 
 	// 测试连接

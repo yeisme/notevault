@@ -38,19 +38,21 @@ s3:
 # 消息队列配置
 mq:
   type: "nats"  # 支持: nats, redis
-  url: "localhost:4222"
-  user: ""
-  password: ""
-  cluster_id: "notevault-cluster"
-  client_id: "notevault-app"
-  max_reconnects: 5
-  reconnect_wait: 5
-  enable_metrics: true
-  endpoint: ":9092"
+  common:
+    url: "localhost:4222"
+    user: ""
+    password: ""
+    cluster_id: "notevault-cluster"
+    client_id: "notevault-app"
+    max_reconnects: 5
+    reconnect_wait: 5
+    enable_metrics: true
+    endpoint: ":9092"
   # Redis 配置（当 type 为 redis 时使用）
-  redis_addr: "localhost:6379"
-  redis_password: ""
-  redis_db: 0
+  redis:
+    addr: "localhost:6379"
+    password: ""
+    db: 0
 
 # 日志配置
 log:

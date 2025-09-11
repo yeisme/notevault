@@ -42,55 +42,60 @@ const (
 
 // MQConfig 消息队列配置.
 type MQConfig struct {
-	Type          MQType `mapstructure:"type"           rule:"oneof=nats redis"`
-	URL           string `mapstructure:"url"            rule:"hostname_port"`
-	User          string `mapstructure:"user"`
-	Password      string `mapstructure:"password"`
-	ClusterID     string `mapstructure:"cluster_id"`
-	ClientID      string `mapstructure:"client_id"`
-	MaxReconnects int    `mapstructure:"max_reconnects" rule:"min=0,max=100"`
-	ReconnectWait int    `mapstructure:"reconnect_wait" rule:"min=1,max=300"`
-	StrictConnect bool   `mapstructure:"strict_connect"` // 若为 true，初始化阶段必须成功建立 TCP 连接，否则返回错误并返回 nil Client
-	// 高性能和高优化配置
-	MaxPingsOut        int  `mapstructure:"max_pings_out"        rule:"min=1,max=10"`
-	PingInterval       int  `mapstructure:"ping_interval"        rule:"min=1,max=300"`
-	ReconnectJitter    bool `mapstructure:"reconnect_jitter"`
-	ReconnectJitterTLS bool `mapstructure:"reconnect_jitter_tls"`
-	// 缓冲区和连接池配置
-	BufferSize   int `mapstructure:"buffer_size"    rule:"min=1024,max=1048576"`
-	ConnPoolSize int `mapstructure:"conn_pool_size" rule:"min=1,max=100"`
-	// JetStream 配置
-	JetStreamEnabled bool   `mapstructure:"jetstream_enabled"`
-	StreamName       string `mapstructure:"stream_name"`
-	SubjectPrefix    string `mapstructure:"subject_prefix"`
-	// JetStream 高级配置
-	JetStreamAutoProvision bool   `mapstructure:"jetstream_auto_provision"`
-	JetStreamTrackMsgID    bool   `mapstructure:"jetstream_track_msg_id"`
-	JetStreamAckAsync      bool   `mapstructure:"jetstream_ack_async"`
-	JetStreamDurablePrefix string `mapstructure:"jetstream_durable_prefix"`
-	// 流配置
-	StreamMaxMsgs     int64  `mapstructure:"stream_max_msgs"`
-	StreamMaxBytes    int64  `mapstructure:"stream_max_bytes"`
-	StreamMaxAge      int    `mapstructure:"stream_max_age"`      // 小时
-	StreamStorageType string `mapstructure:"stream_storage_type"` // file, memory
-	StreamReplicas    int    `mapstructure:"stream_replicas"`
-	// 消费者配置
-	ConsumerAckWait       int `mapstructure:"consumer_ack_wait"` // 秒
-	ConsumerMaxDeliver    int `mapstructure:"consumer_max_deliver"`
-	ConsumerMaxAckPending int `mapstructure:"consumer_max_ack_pending"`
-	// 认证配置
-	JWT  string `mapstructure:"jwt"`
-	NKey string `mapstructure:"nkey"`
-	// 集群和扩展配置
-	ClusterURLs []string `mapstructure:"cluster_urls"`
-	LoadBalance bool     `mapstructure:"load_balance"`
-	// Redis 配置
-	RedisAddr     string `mapstructure:"redis_addr"     rule:"hostname_port"`
-	RedisPassword string `mapstructure:"redis_password"`
-	RedisDB       int    `mapstructure:"redis_db"       rule:"min=0,max=15"`
-	// 启动监控
-	EnableMetrics bool   `mapstructure:"enable_metrics"`
-	Endpoint      string `mapstructure:"endpoint"`
+	Type   MQType         `mapstructure:"type"   rule:"oneof=nats redis"`
+	Common MQCommonConfig `mapstructure:"common"`
+	NATS   MQNATSConfig   `mapstructure:"nats"`
+	Redis  MQRedisConfig  `mapstructure:"redis"`
+}
+
+// MQCommonConfig 通用MQ配置.
+type MQCommonConfig struct {
+	URL                string `mapstructure:"url"                  rule:"hostname_port"`
+	User               string `mapstructure:"user"`
+	Password           string `mapstructure:"password"`
+	ClusterID          string `mapstructure:"cluster_id"`
+	ClientID           string `mapstructure:"client_id"`
+	MaxReconnects      int    `mapstructure:"max_reconnects"       rule:"min=0,max=100"`
+	ReconnectWait      int    `mapstructure:"reconnect_wait"       rule:"min=1,max=300"`
+	StrictConnect      bool   `mapstructure:"strict_connect"`
+	MaxPingsOut        int    `mapstructure:"max_pings_out"        rule:"min=1,max=10"`
+	PingInterval       int    `mapstructure:"ping_interval"        rule:"min=1,max=300"`
+	ReconnectJitter    bool   `mapstructure:"reconnect_jitter"`
+	ReconnectJitterTLS bool   `mapstructure:"reconnect_jitter_tls"`
+	BufferSize         int    `mapstructure:"buffer_size"          rule:"min=1024,max=1048576"`
+	ConnPoolSize       int    `mapstructure:"conn_pool_size"       rule:"min=1,max=100"`
+	EnableMetrics      bool   `mapstructure:"enable_metrics"`
+	Endpoint           string `mapstructure:"endpoint"`
+}
+
+// MQNATSConfig NATS MQ 配置.
+type MQNATSConfig struct {
+	JetStreamEnabled       bool     `mapstructure:"jetstream_enabled"`
+	StreamName             string   `mapstructure:"stream_name"`
+	SubjectPrefix          string   `mapstructure:"subject_prefix"`
+	JetStreamAutoProvision bool     `mapstructure:"jetstream_auto_provision"`
+	JetStreamTrackMsgID    bool     `mapstructure:"jetstream_track_msg_id"`
+	JetStreamAckAsync      bool     `mapstructure:"jetstream_ack_async"`
+	JetStreamDurablePrefix string   `mapstructure:"jetstream_durable_prefix"`
+	StreamMaxMsgs          int64    `mapstructure:"stream_max_msgs"`
+	StreamMaxBytes         int64    `mapstructure:"stream_max_bytes"`
+	StreamMaxAge           int      `mapstructure:"stream_max_age"`
+	StreamStorageType      string   `mapstructure:"stream_storage_type"`
+	StreamReplicas         int      `mapstructure:"stream_replicas"`
+	ConsumerAckWait        int      `mapstructure:"consumer_ack_wait"`
+	ConsumerMaxDeliver     int      `mapstructure:"consumer_max_deliver"`
+	ConsumerMaxAckPending  int      `mapstructure:"consumer_max_ack_pending"`
+	JWT                    string   `mapstructure:"jwt"`
+	NKey                   string   `mapstructure:"nkey"`
+	ClusterURLs            []string `mapstructure:"cluster_urls"`
+	LoadBalance            bool     `mapstructure:"load_balance"`
+}
+
+// MQRedisConfig Redis MQ 配置.
+type MQRedisConfig struct {
+	Addr     string `mapstructure:"addr"     rule:"hostname_port"`
+	Password string `mapstructure:"password"`
+	DB       int    `mapstructure:"db"       rule:"min=0,max=15"`
 }
 
 // GetMQType 返回当前配置的消息队列类型.
@@ -101,60 +106,48 @@ func (c *MQConfig) GetMQType() MQType {
 // setDefaults 设置MQ配置的默认值.
 func (c *MQConfig) setDefaults(v *viper.Viper) {
 	v.SetDefault("mq.type", MQTypeNATS)
-	v.SetDefault("mq.url", DefaultMQURL)
-	v.SetDefault("mq.user", DefaultMQUser)
-	v.SetDefault("mq.password", DefaultMQPassword)
-	v.SetDefault("mq.cluster_id", DefaultMQClusterID)
-	v.SetDefault("mq.client_id", DefaultMQClientID)
-	v.SetDefault("mq.max_reconnects", DefaultMaxReconnects)
-	v.SetDefault("mq.reconnect_wait", DefaultReconnectWait)
-	v.SetDefault("mq.strict_connect", false)
 
-	// 高性能和高优化默认值
-	v.SetDefault("mq.max_pings_out", DefaultMaxPingsOut)
-	v.SetDefault("mq.ping_interval", DefaultPingInterval)
-	v.SetDefault("mq.reconnect_jitter", true)
-	v.SetDefault("mq.reconnect_jitter_tls", true)
-	v.SetDefault("mq.buffer_size", DefaultBufferSize)
-	v.SetDefault("mq.conn_pool_size", DefaultConnPoolSize)
+	// Common 默认值
+	v.SetDefault("mq.common.url", DefaultMQURL)
+	v.SetDefault("mq.common.user", DefaultMQUser)
+	v.SetDefault("mq.common.password", DefaultMQPassword)
+	v.SetDefault("mq.common.cluster_id", DefaultMQClusterID)
+	v.SetDefault("mq.common.client_id", DefaultMQClientID)
+	v.SetDefault("mq.common.max_reconnects", DefaultMaxReconnects)
+	v.SetDefault("mq.common.reconnect_wait", DefaultReconnectWait)
+	v.SetDefault("mq.common.strict_connect", false)
+	v.SetDefault("mq.common.max_pings_out", DefaultMaxPingsOut)
+	v.SetDefault("mq.common.ping_interval", DefaultPingInterval)
+	v.SetDefault("mq.common.reconnect_jitter", true)
+	v.SetDefault("mq.common.reconnect_jitter_tls", true)
+	v.SetDefault("mq.common.buffer_size", DefaultBufferSize)
+	v.SetDefault("mq.common.conn_pool_size", DefaultConnPoolSize)
+	v.SetDefault("mq.common.enable_metrics", true)
+	v.SetDefault("mq.common.endpoint", ":9092")
 
-	// JetStream 默认值
-	v.SetDefault("mq.jetstream_enabled", true)
-	v.SetDefault("mq.stream_name", "notevault-stream")
-	v.SetDefault("mq.subject_prefix", "notevault.")
-
-	// JetStream 高级默认值
-	v.SetDefault("mq.jetstream_auto_provision", true)
-	v.SetDefault("mq.jetstream_track_msg_id", true)
-	v.SetDefault("mq.jetstream_ack_async", true)
-	v.SetDefault("mq.jetstream_durable_prefix", "notevault-durable")
-
-	// 流默认值
-	v.SetDefault("mq.stream_max_msgs", DefaultStreamMaxMsgs)
-	v.SetDefault("mq.stream_max_bytes", DefaultStreamMaxBytes)
-	v.SetDefault("mq.stream_max_age", DefaultStreamMaxAge)
-	v.SetDefault("mq.stream_storage_type", "file")
-	v.SetDefault("mq.stream_replicas", DefaultStreamReplicas)
-
-	// 消费者默认值
-	v.SetDefault("mq.consumer_ack_wait", DefaultConsumerAckWait)
-	v.SetDefault("mq.consumer_max_deliver", DefaultConsumerMaxDeliver)
-	v.SetDefault("mq.consumer_max_ack_pending", DefaultConsumerMaxAckPending)
-
-	// 认证默认值
-	v.SetDefault("mq.jwt", "")
-	v.SetDefault("mq.nkey", "")
-
-	// 集群和扩展默认值
-	v.SetDefault("mq.cluster_urls", []string{})
-	v.SetDefault("mq.load_balance", true)
+	// NATS 默认值
+	v.SetDefault("mq.nats.jetstream_enabled", true)
+	v.SetDefault("mq.nats.stream_name", "notevault-stream")
+	v.SetDefault("mq.nats.subject_prefix", "notevault.")
+	v.SetDefault("mq.nats.jetstream_auto_provision", true)
+	v.SetDefault("mq.nats.jetstream_track_msg_id", true)
+	v.SetDefault("mq.nats.jetstream_ack_async", true)
+	v.SetDefault("mq.nats.jetstream_durable_prefix", "notevault-durable")
+	v.SetDefault("mq.nats.stream_max_msgs", DefaultStreamMaxMsgs)
+	v.SetDefault("mq.nats.stream_max_bytes", DefaultStreamMaxBytes)
+	v.SetDefault("mq.nats.stream_max_age", DefaultStreamMaxAge)
+	v.SetDefault("mq.nats.stream_storage_type", "file")
+	v.SetDefault("mq.nats.stream_replicas", DefaultStreamReplicas)
+	v.SetDefault("mq.nats.consumer_ack_wait", DefaultConsumerAckWait)
+	v.SetDefault("mq.nats.consumer_max_deliver", DefaultConsumerMaxDeliver)
+	v.SetDefault("mq.nats.consumer_max_ack_pending", DefaultConsumerMaxAckPending)
+	v.SetDefault("mq.nats.jwt", "")
+	v.SetDefault("mq.nats.nkey", "")
+	v.SetDefault("mq.nats.cluster_urls", []string{})
+	v.SetDefault("mq.nats.load_balance", true)
 
 	// Redis 默认值
-	v.SetDefault("mq.redis_addr", "localhost:6379")
-	v.SetDefault("mq.redis_password", "")
-	v.SetDefault("mq.redis_db", 0)
-
-	// 启动监控默认值
-	v.SetDefault("mq.enable_metrics", true)
-	v.SetDefault("mq.endpoint", ":9092")
+	v.SetDefault("mq.redis.addr", "localhost:6379")
+	v.SetDefault("mq.redis.password", "")
+	v.SetDefault("mq.redis.db", 0)
 }

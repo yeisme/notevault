@@ -13,6 +13,7 @@ package mq
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -37,14 +38,14 @@ func init() {
 // buildNatsOptions 构建 NATS 连接选项.
 func buildNatsOptions(cfg *configs.MQConfig) []nc.Option {
 	opts := []nc.Option{
-		nc.Name(cfg.ClientID),                                            // 客户端名称
-		nc.MaxReconnects(cfg.MaxReconnects),                              // 最大重连次数
-		nc.ReconnectWait(time.Duration(cfg.ReconnectWait) * time.Second), // 重连等待时间
-		nc.PingInterval(time.Duration(cfg.PingInterval) * time.Second),   // 心跳间隔
-		nc.ReconnectBufSize(cfg.BufferSize),                              // 重连缓冲区大小
-		nc.DrainTimeout(DefaultDrainTimeout),                             // 优雅关闭超时
-		nc.FlusherTimeout(DefaultStreamMaxMsgs),                          // 刷新超时
-		nc.RetryOnFailedConnect(true),                                    // 连接失败时重试
+		nc.Name(cfg.Common.ClientID),                                            // 客户端名称
+		nc.MaxReconnects(cfg.Common.MaxReconnects),                              // 最大重连次数
+		nc.ReconnectWait(time.Duration(cfg.Common.ReconnectWait) * time.Second), // 重连等待时间
+		nc.PingInterval(time.Duration(cfg.Common.PingInterval) * time.Second),   // 心跳间隔
+		nc.ReconnectBufSize(cfg.Common.BufferSize),                              // 重连缓冲区大小
+		nc.DrainTimeout(DefaultDrainTimeout),                                    // 优雅关闭超时
+		nc.FlusherTimeout(DefaultStreamMaxMsgs),                                 // 刷新超时
+		nc.RetryOnFailedConnect(true),                                           // 连接失败时重试
 	}
 
 	// 添加认证选项
@@ -55,12 +56,12 @@ func buildNatsOptions(cfg *configs.MQConfig) []nc.Option {
 
 // appendAuthOptions 添加认证选项.
 func appendAuthOptions(opts []nc.Option, cfg *configs.MQConfig) []nc.Option {
-	if cfg.JWT != "" {
-		opts = append(opts, nc.UserJWTAndSeed(cfg.JWT, cfg.NKey))
-	} else if cfg.NKey != "" {
-		opts = append(opts, nc.Nkey(cfg.NKey, nil))
-	} else if cfg.User != "" {
-		opts = append(opts, nc.UserInfo(cfg.User, cfg.Password))
+	if cfg.NATS.JWT != "" {
+		opts = append(opts, nc.UserJWTAndSeed(cfg.NATS.JWT, cfg.NATS.NKey))
+	} else if cfg.NATS.NKey != "" {
+		opts = append(opts, nc.Nkey(cfg.NATS.NKey, nil))
+	} else if cfg.Common.User != "" {
+		opts = append(opts, nc.UserInfo(cfg.Common.User, cfg.Common.Password))
 	}
 
 	return opts
@@ -69,31 +70,31 @@ func appendAuthOptions(opts []nc.Option, cfg *configs.MQConfig) []nc.Option {
 // buildJetStreamConfig 构建 JetStream 配置.
 func buildJetStreamConfig(cfg *configs.MQConfig, logger watermill.LoggerAdapter) nats.JetStreamConfig {
 	jsCfg := nats.JetStreamConfig{
-		Disabled: !cfg.JetStreamEnabled,
+		Disabled: !cfg.NATS.JetStreamEnabled,
 	}
 
-	if cfg.JetStreamEnabled {
+	if cfg.NATS.JetStreamEnabled {
 		// 设置自动创建流
-		jsCfg.AutoProvision = cfg.JetStreamAutoProvision
+		jsCfg.AutoProvision = cfg.NATS.JetStreamAutoProvision
 
 		// 设置消息跟踪以防止重复
-		jsCfg.TrackMsgId = cfg.JetStreamTrackMsgID
+		jsCfg.TrackMsgId = cfg.NATS.JetStreamTrackMsgID
 
 		// 设置异步确认
-		jsCfg.AckAsync = cfg.JetStreamAckAsync
+		jsCfg.AckAsync = cfg.NATS.JetStreamAckAsync
 
 		// 设置持久化前缀
-		jsCfg.DurablePrefix = cfg.JetStreamDurablePrefix
+		jsCfg.DurablePrefix = cfg.NATS.JetStreamDurablePrefix
 
 		// 注意：ConnectOptions、PublishOptions、SubscribeOptions 需要根据 watermill-nats 库的具体实现来配置
 		// 这里我们记录配置信息，供调试使用
 		logger.Info("JetStream 配置信息", watermill.LogFields{
-			"auto_provision": cfg.JetStreamAutoProvision,
-			"track_msg_id":   cfg.JetStreamTrackMsgID,
-			"ack_async":      cfg.JetStreamAckAsync,
-			"durable_prefix": cfg.JetStreamDurablePrefix,
-			"stream_name":    cfg.StreamName,
-			"subject_prefix": cfg.SubjectPrefix,
+			"auto_provision": cfg.NATS.JetStreamAutoProvision,
+			"track_msg_id":   cfg.NATS.JetStreamTrackMsgID,
+			"ack_async":      cfg.NATS.JetStreamAckAsync,
+			"durable_prefix": cfg.NATS.JetStreamDurablePrefix,
+			"stream_name":    cfg.NATS.StreamName,
+			"subject_prefix": cfg.NATS.SubjectPrefix,
 		})
 	}
 
@@ -102,11 +103,11 @@ func buildJetStreamConfig(cfg *configs.MQConfig, logger watermill.LoggerAdapter)
 
 // buildURL 构建连接 URL.
 func buildURL(cfg *configs.MQConfig) string {
-	if len(cfg.ClusterURLs) > 0 {
-		return strings.Join(cfg.ClusterURLs, ",")
+	if len(cfg.NATS.ClusterURLs) > 0 {
+		return strings.Join(cfg.NATS.ClusterURLs, ",")
 	}
 
-	return cfg.URL
+	return cfg.Common.URL
 }
 
 // natsFactory 创建 NATS Publisher & Subscriber.
@@ -119,9 +120,14 @@ func buildURL(cfg *configs.MQConfig) string {
 //   - 消费者配置：确认等待时间、最大投递次数等
 func natsFactory(
 	ctx context.Context,
-	cfg *configs.MQConfig,
+	config any,
 	logger watermill.LoggerAdapter) (
 	message.Publisher, message.Subscriber, error) {
+	cfg, ok := config.(*configs.MQConfig)
+	if !ok {
+		return nil, nil, fmt.Errorf("invalid NATS config")
+	}
+
 	opts := buildNatsOptions(cfg)
 	jsCfg := buildJetStreamConfig(cfg, logger)
 	marshaler := &nats.JSONMarshaler{}
@@ -173,9 +179,9 @@ func createSubscriber(
 	}
 
 	// 如果启用负载均衡，记录日志
-	if cfg.LoadBalance {
+	if cfg.NATS.LoadBalance {
 		logger.Info("通过主题前缀启用负载均衡", watermill.LogFields{
-			"prefix": cfg.SubjectPrefix,
+			"prefix": cfg.NATS.SubjectPrefix,
 		})
 	}
 

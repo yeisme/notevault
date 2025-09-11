@@ -1,0 +1,51 @@
+# NoteVault 应用程序配置 - SQLite 本地调试
+
+# 服务器配置
+server:
+  port: 8080
+  host: "0.0.0.0"
+  log_level: "info"
+  reload_config: true
+  debug: true
+  timeout: 30
+  read_timeout: 10
+  write_timeout: 10
+
+# 数据库配置 - SQLite
+db:
+  type: "sqlite"
+  database: "notevault.db"
+  max_open_conns: 0
+  max_idle_conns: 5
+
+# S3 存储配置 - MinIO 本地
+s3:
+  endpoint: "localhost:9000"
+  access_key_id: "minioadmin"
+  secret_access_key: "minioadmin"
+  use_ssl: false
+  bucket_name:
+    - "notevault"
+  region: "us-east-1"
+
+# 消息队列配置 - NATS
+mq:
+  type: "nats"
+  common:
+    url: "localhost:4222"
+    user: ""
+    password: ""
+
+# 日志配置
+log:
+  enable_file: true
+  file_path: "logs/notevault.log"
+  max_size_mb: 100
+  max_backups: 7
+  max_age_days: 28
+  compress: true
+  level: "info"
+
+# 键值存储配置 - Memory
+kv:
+  type: "memory"

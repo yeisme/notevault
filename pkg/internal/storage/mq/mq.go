@@ -47,7 +47,7 @@ import (
 )
 
 // Factory 定义创建 Publisher + Subscriber 的工厂函数.
-type Factory func(ctx context.Context, cfg *configs.MQConfig, logger watermill.LoggerAdapter) (message.Publisher, message.Subscriber, error)
+type Factory func(ctx context.Context, config any, logger watermill.LoggerAdapter) (message.Publisher, message.Subscriber, error)
 
 var (
 	factories = map[configs.MQType]Factory{}
@@ -137,7 +137,7 @@ var (
 
 // validateBasicConfig 验证 MQ 配置的基本要求.
 func validateBasicConfig(cfg *configs.MQConfig) error {
-	if cfg.URL == "" && len(cfg.ClusterURLs) == 0 {
+	if cfg.Common.URL == "" && len(cfg.NATS.ClusterURLs) == 0 {
 		return errors.New("mq url or cluster_urls required")
 	}
 
@@ -150,9 +150,9 @@ func validateBasicConfig(cfg *configs.MQConfig) error {
 
 // pickProbeTarget 从配置中选择一个用于 TCP 探测的目标地址.
 func pickProbeTarget(cfg *configs.MQConfig) string {
-	target := cfg.URL
-	if target == "" && len(cfg.ClusterURLs) > 0 {
-		target = cfg.ClusterURLs[0]
+	target := cfg.Common.URL
+	if target == "" && len(cfg.NATS.ClusterURLs) > 0 {
+		target = cfg.NATS.ClusterURLs[0]
 	}
 
 	if strings.Contains(target, ",") { // 多地址只取第一个探测
@@ -168,7 +168,7 @@ func pickProbeTarget(cfg *configs.MQConfig) string {
 
 // strictProbe 在 StrictConnect 模式下尝试建立 TCP 连接以验证可达性.
 func strictProbe(ctx context.Context, cfg *configs.MQConfig) error {
-	if !cfg.StrictConnect {
+	if !cfg.Common.StrictConnect {
 		return nil
 	}
 
@@ -193,11 +193,11 @@ func enableMetricsIfNeeded(
 	logger watermill.LoggerAdapter,
 ) (message.Publisher, message.Subscriber, *message.Router, func(), error) {
 	metricsCfg := configs.GetConfig().MQ
-	if !metricsCfg.EnableMetrics {
+	if !metricsCfg.Common.EnableMetrics {
 		return pub, sub, nil, nil, nil
 	}
 
-	prometheusRegistry, closeMetricsServer := metrics.CreateRegistryAndServeHTTP(metricsCfg.Endpoint)
+	prometheusRegistry, closeMetricsServer := metrics.CreateRegistryAndServeHTTP(metricsCfg.Common.Endpoint)
 
 	router, err := message.NewRouter(message.RouterConfig{}, logger)
 	if err != nil {
@@ -223,7 +223,7 @@ func enableMetricsIfNeeded(
 		return nil, nil, nil, nil, fmt.Errorf("decorate subscriber with metrics: %w", err)
 	}
 
-	nlog.Logger().Info().Str("endpoint", metricsCfg.Endpoint).Msg("MQ metrics enabled")
+	nlog.Logger().Info().Str("endpoint", metricsCfg.Common.Endpoint).Msg("MQ metrics enabled")
 
 	return decoratedPub, decoratedSub, router, closeMetricsServer, nil
 }
@@ -233,9 +233,20 @@ func New(ctx context.Context) (*Client, error) {
 	mqOnce.Do(func() {
 		cfg := configs.GetConfig().MQ
 
-		if err := validateBasicConfig(&cfg); err != nil {
-			mqErr = err
+		if _, ok := factories[cfg.Type]; !ok {
+			mqErr = fmt.Errorf("unsupported mq type: %s", cfg.Type)
 			return
+		}
+
+		var config any
+
+		switch cfg.Type {
+		case configs.MQTypeNATS:
+			config = &cfg
+		case configs.MQTypeRedis:
+			config = &cfg
+		default:
+			config = &cfg
 		}
 
 		if err := strictProbe(ctx, &cfg); err != nil {
@@ -246,7 +257,7 @@ func New(ctx context.Context) (*Client, error) {
 		logger := &zerologAdapter{l: nlog.Logger()}
 		factory := factories[cfg.Type]
 
-		pub, sub, err := factory(ctx, &cfg, logger)
+		pub, sub, err := factory(ctx, config, logger)
 		if err != nil {
 			mqErr = fmt.Errorf("init mq (%s): %w", cfg.Type, err)
 			return
@@ -260,7 +271,7 @@ func New(ctx context.Context) (*Client, error) {
 
 		mqInst = &Client{publisher: pub, subscriber: sub, router: router, closeFunc: closeFunc}
 
-		nlog.Logger().Info().Str("type", string(cfg.Type)).Bool("strict", cfg.StrictConnect).Msg("MQ 管理器已初始化")
+		nlog.Logger().Info().Str("type", string(cfg.Type)).Bool("strict", cfg.Common.StrictConnect).Msg("MQ 管理器已初始化")
 	})
 
 	return mqInst, mqErr
