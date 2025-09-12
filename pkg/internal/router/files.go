@@ -38,10 +38,10 @@ func RegisterFilesRoutes(g *gin.RouterGroup) {
 
 		// ===== 文件操作路由（支持单个和批量） =====
 		// 注意：通过请求体中的ID列表来支持批量操作
-		filesRoutes.DELETE("", handle.DefaultHandler)    // 删除文件(单个/批量)
-		filesRoutes.PUT("", handle.DefaultHandler)       // 更新文件元数据(单个/批量)
-		filesRoutes.POST("/copy", handle.DefaultHandler) // 复制文件(单个/批量)
-		filesRoutes.POST("/move", handle.DefaultHandler) // 移动文件(单个/批量)
+		filesRoutes.DELETE("", handle.DeleteFiles)      // 删除文件(单个/批量)
+		filesRoutes.PUT("", handle.UpdateFilesMetadata) // 更新文件元数据(单个/批量)
+		filesRoutes.POST("/copy", handle.CopyFiles)     // 复制文件(单个/批量)
+		filesRoutes.POST("/move", handle.MoveFiles)     // 移动文件(单个/批量)
 
 		// ===== 文件下载路由 =====
 		downloadGroup := filesRoutes.Group("/download")
