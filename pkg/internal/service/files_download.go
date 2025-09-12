@@ -2,6 +2,11 @@ package service
 
 import (
 	"context"
+	"fmt"
+	"strings"
+	"time"
+
+	"github.com/minio/minio-go/v7"
 
 	"github.com/yeisme/notevault/pkg/internal/types"
 )
@@ -28,4 +33,74 @@ func (fs *FileService) PresignedGetURLs(ctx context.Context, req *types.GetFiles
 	}
 
 	return &types.GetFilesURLResponse{Results: results}, nil
+}
+
+// StatObject 查询对象信息（包含大小、类型、ETag、最后修改时间等）。
+func (fs *FileService) StatObject(ctx context.Context, user, objectKey string) (*types.ObjectInfo, error) {
+	if user == "" || !strings.HasPrefix(objectKey, user+"/") {
+		return nil, fmt.Errorf("access denied: object does not belong to user")
+	}
+
+	bucket, err := fs.defaultBucket()
+	if err != nil {
+		return nil, err
+	}
+
+	info, err := fs.s3Client.StatObject(ctx, bucket, objectKey, minio.StatObjectOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("stat object %s: %w", objectKey, err)
+	}
+
+	obj := &types.ObjectInfo{
+		ObjectKey:    objectKey,
+		Size:         info.Size,
+		ETag:         strings.Trim(info.ETag, "\""),
+		ContentType:  info.ContentType,
+		LastModified: info.LastModified.UTC().Format(time.RFC3339),
+		VersionID:    info.VersionID,
+		StorageClass: info.StorageClass,
+		Bucket:       bucket,
+		UserMetadata: info.UserMetadata,
+	}
+
+	return obj, nil
+}
+
+// OpenObject 打开对象获取可读流与其信息。
+func (fs *FileService) OpenObject(ctx context.Context, user, objectKey string) (*minio.Object, *types.ObjectInfo, error) { //nolint:ireturn
+	if user == "" || !strings.HasPrefix(objectKey, user+"/") {
+		return nil, nil, fmt.Errorf("access denied: object does not belong to user")
+	}
+
+	bucket, err := fs.defaultBucket()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	obj, err := fs.s3Client.GetObject(ctx, bucket, objectKey, minio.GetObjectOptions{})
+	if err != nil {
+		return nil, nil, fmt.Errorf("get object %s: %w", objectKey, err)
+	}
+
+	// 通过 StatObject 获取对象信息
+	info, err := fs.s3Client.StatObject(ctx, bucket, objectKey, minio.StatObjectOptions{})
+	if err != nil {
+		// 关闭 obj 以避免泄露
+		_ = obj.Close()
+		return nil, nil, fmt.Errorf("stat object %s: %w", objectKey, err)
+	}
+
+	meta := &types.ObjectInfo{
+		ObjectKey:    objectKey,
+		Size:         info.Size,
+		ETag:         strings.Trim(info.ETag, "\""),
+		ContentType:  info.ContentType,
+		LastModified: info.LastModified.UTC().Format(time.RFC3339),
+		VersionID:    info.VersionID,
+		StorageClass: info.StorageClass,
+		Bucket:       bucket,
+		UserMetadata: info.UserMetadata,
+	}
+
+	return obj, meta, nil
 }

@@ -46,7 +46,7 @@ func RegisterFilesRoutes(g *gin.RouterGroup) {
 		// ===== 文件下载路由 =====
 		downloadGroup := filesRoutes.Group("/download")
 		{
-			downloadGroup.POST("", handle.DefaultHandler)     // 下载文件(单个/批量)
+			downloadGroup.POST("", handle.DownloadFiles)      // 下载文件(单个/批量)
 			downloadGroup.POST("/url", handle.GetDownloadURL) // 获取下载URL(单个/批量)
 		}
 
