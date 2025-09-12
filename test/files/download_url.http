@@ -1,0 +1,34 @@
+@fileurl=http://localhost:8080/api/v1/files
+
+### 获取文件访问 URL JSON
+
+POST {{fileurl}}/download/url
+Content-Type: application/json
+
+{
+  "objects": [
+    {
+      "object_key": "test-user@example.com/2023/10/uuid_example1.txt"
+    },
+    {
+      "object_key": "test-user@example.com/2023/10/uuid_example2.jpg"
+    }
+  ],
+  "expiry_seconds": 3600
+}
+
+### 获取文件访问 URL (带响应头控制) JSON
+
+POST {{fileurl}}/download/url
+Content-Type: application/json
+
+{
+  "objects": [
+    {
+      "object_key": "test-user@example.com/2023/10/uuid_example1.txt",
+      "response_content_type": "text/plain",
+      "response_content_disposition": "attachment; filename=\"example1.txt\""
+    }
+  ],
+  "expiry_seconds": 1800
+}

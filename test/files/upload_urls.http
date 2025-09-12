@@ -1,0 +1,20 @@
+@fileurl=http://localhost:8080/api/v1/files
+
+### 生成预签名 PUT URL (不带策略) JSON
+
+POST {{fileurl}}/upload/urls
+Content-Type: application/json
+X-User: test-user@example.com
+
+{
+  "files": [
+    {
+      "file_name": "example1.txt",
+      "content_type": "text/plain"
+    },
+    {
+      "file_name": "example2.jpg",
+      "content_type": "image/jpeg"
+    }
+  ]
+}
