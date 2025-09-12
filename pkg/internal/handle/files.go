@@ -257,6 +257,10 @@ func UploadSingleFile(c *gin.Context) {
 		}
 	}
 
+	if lastModifiedStr := c.PostForm("last_modified"); lastModifiedStr != "" {
+		metadata.LastModified = lastModifiedStr
+	}
+
 	// 打开文件
 	src, err := file.Open()
 	if err != nil {

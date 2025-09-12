@@ -146,6 +146,10 @@ test
 Content-Disposition: form-data; name="is_public"
 
 true
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="last_modified"
+
+2023-10-15T10:30:00Z
 ------WebKitFormBoundary7MA4YWxkTrZu0gW--
 
 ### 批量上传小文件 (基本)
@@ -196,7 +200,8 @@ Content-Disposition: form-data; name="metadata"
     "description": "First file with metadata",
     "content_type": "text/plain",
     "category": "test",
-    "is_public": true
+    "is_public": true,
+    "last_modified": "2023-10-15T10:30:00Z"
   },
   {
     "file_name": "custom_file2.jpg",
@@ -204,7 +209,8 @@ Content-Disposition: form-data; name="metadata"
     "description": "Second file with metadata",
     "content_type": "image/jpeg",
     "category": "media",
-    "is_public": false
+    "is_public": false,
+    "last_modified": "2023-10-16T14:20:00Z"
   }
 ]
 ------WebKitFormBoundary7MA4YWxkTrZu0gW--

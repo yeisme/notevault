@@ -81,14 +81,15 @@ type PresignedDownloadItem struct {
 
 // UploadFileMetadata 上传文件元数据.
 type UploadFileMetadata struct {
-	FileName    string            `form:"file_name"    json:"file_name,omitempty"`    // 可选：文件名
-	Tags        map[string]string `form:"tags"         json:"tags,omitempty"`         // 可选：标签
-	Description string            `form:"description"  json:"description,omitempty"`  // 可选：描述
-	ContentType string            `form:"content_type" json:"content_type,omitempty"` // 可选：内容类型
-	Category    string            `form:"category"     json:"category,omitempty"`     // 可选：分类
-	Folder      string            `form:"folder"       json:"folder,omitempty"`       // 可选：文件夹
-	IsPublic    bool              `form:"is_public"    json:"is_public,omitempty"`    // 可选：是否公开
-	ExpiryDays  int               `form:"expiry_days"  json:"expiry_days,omitempty"`  // 可选：过期天数
+	FileName     string            `form:"file_name"     json:"file_name,omitempty"`     // 可选：文件名
+	Tags         map[string]string `form:"tags"          json:"tags,omitempty"`          // 可选：标签
+	Description  string            `form:"description"   json:"description,omitempty"`   // 可选：描述
+	ContentType  string            `form:"content_type"  json:"content_type,omitempty"`  // 可选：内容类型
+	Category     string            `form:"category"      json:"category,omitempty"`      // 可选：分类
+	Folder       string            `form:"folder"        json:"folder,omitempty"`        // 可选：文件夹
+	IsPublic     bool              `form:"is_public"     json:"is_public,omitempty"`     // 可选：是否公开
+	ExpiryDays   int               `form:"expiry_days"   json:"expiry_days,omitempty"`   // 可选：过期天数
+	LastModified string            `form:"last_modified" json:"last_modified,omitempty"` // 可选：最后修改时间 (RFC3339格式)
 }
 
 // UploadFileResponse 单个文件上传响应.
