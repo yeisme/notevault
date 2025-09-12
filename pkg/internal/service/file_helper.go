@@ -20,6 +20,8 @@ import (
 const (
 	// DefaultSliceCapacity 默认slice预分配容量.
 	DefaultSliceCapacity = 100
+	// DefaultPresignedOpTimeout 默认预签名操作超时时间.
+	DefaultPresignedOpTimeout = 15 * time.Minute
 )
 
 // buildObjectKey 构建对象存储路径.放在 service 层便于未来统一策略（如目录分桶、版本号等）.
