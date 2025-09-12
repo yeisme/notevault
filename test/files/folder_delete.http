@@ -1,0 +1,60 @@
+@fileurl=http://localhost:8080/api/v1/files
+
+### 删除文件夹 (基本删除 - 非递归)
+
+DELETE {{fileurl}}/folder/abc123def456
+Content-Type: application/json
+X-User: test-user@example.com
+
+{
+  "recursive": false
+}
+
+### 删除文件夹 (递归删除)
+
+DELETE {{fileurl}}/folder/def789ghi012
+Content-Type: application/json
+X-User: test-user@example.com
+
+{
+  "recursive": true
+}
+
+### 删除文件夹 (默认非递归)
+
+DELETE {{fileurl}}/folder/ghi345jkl678
+Content-Type: application/json
+X-User: test-user@example.com
+
+{
+}
+
+### 删除文件夹 (错误 - 文件夹不存在)
+
+DELETE {{fileurl}}/folder/nonexistent123
+Content-Type: application/json
+X-User: test-user@example.com
+
+{
+  "recursive": false
+}
+
+### 删除文件夹 (错误 - 文件夹不为空且非递归)
+
+DELETE {{fileurl}}/folder/abc123def456
+Content-Type: application/json
+X-User: test-user@example.com
+
+{
+  "recursive": false
+}
+
+### 删除文件夹 (错误 - 无权限访问)
+
+DELETE {{fileurl}}/folder/abc123def456
+Content-Type: application/json
+X-User: other-user@example.com
+
+{
+  "recursive": true
+}

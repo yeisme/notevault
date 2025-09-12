@@ -1,0 +1,131 @@
+@fileurl=http://localhost:8080/api/v1/files
+
+### ===== 文件夹管理完整测试场景 =====
+
+### 场景1: 创建根级文件夹
+POST {{fileurl}}/folder
+Content-Type: application/json
+X-User: test-user@example.com
+
+{
+  "name": "workspace",
+  "description": "Main workspace folder"
+}
+
+### 场景2: 在workspace下创建子文件夹
+POST {{fileurl}}/folder
+Content-Type: application/json
+X-User: test-user@example.com
+
+{
+  "name": "documents",
+  "path": "workspace",
+  "description": "Documents subfolder"
+}
+
+### 场景3: 在documents下创建项目文件夹
+POST {{fileurl}}/folder
+Content-Type: application/json
+X-User: test-user@example.com
+
+{
+  "name": "project-alpha",
+  "path": "workspace/documents",
+  "description": "Project Alpha documentation"
+}
+
+### 场景4: 重命名子文件夹
+PUT {{fileurl}}/folder/[FOLDER_ID_FROM_STEP_3]
+Content-Type: application/json
+X-User: test-user@example.com
+
+{
+  "new_name": "project-beta"
+}
+
+### 场景5: 创建另一个文件夹用于删除测试
+POST {{fileurl}}/folder
+Content-Type: application/json
+X-User: test-user@example.com
+
+{
+  "name": "temp-folder",
+  "description": "Temporary folder for deletion test"
+}
+
+### 场景6: 删除空文件夹 (非递归)
+DELETE {{fileurl}}/folder/[FOLDER_ID_FROM_STEP_5]
+Content-Type: application/json
+X-User: test-user@example.com
+
+{
+  "recursive": false
+}
+
+### 场景7: 创建文件夹用于递归删除测试
+POST {{fileurl}}/folder
+Content-Type: application/json
+X-User: test-user@example.com
+
+{
+  "name": "nested-test",
+  "description": "Folder with nested content"
+}
+
+### 场景8: 在nested-test下创建子文件夹
+POST {{fileurl}}/folder
+Content-Type: application/json
+X-User: test-user@example.com
+
+{
+  "name": "sub-nested",
+  "path": "nested-test",
+  "description": "Subfolder for recursive deletion test"
+}
+
+### 场景9: 递归删除有内容的文件夹
+DELETE {{fileurl}}/folder/[FOLDER_ID_FROM_STEP_7]
+Content-Type: application/json
+X-User: test-user@example.com
+
+{
+  "recursive": true
+}
+
+### ===== 错误场景测试 =====
+
+### 错误1: 创建文件夹 - 缺少必需字段
+POST {{fileurl}}/folder
+Content-Type: application/json
+X-User: test-user@example.com
+
+{
+  "description": "Missing name field"
+}
+
+### 错误2: 重命名文件夹 - 文件夹不存在
+PUT {{fileurl}}/folder/invalid-folder-id
+Content-Type: application/json
+X-User: test-user@example.com
+
+{
+  "new_name": "new-name"
+}
+
+### 错误3: 删除文件夹 - 无权限
+DELETE {{fileurl}}/folder/[SOME_FOLDER_ID]
+Content-Type: application/json
+X-User: unauthorized-user@example.com
+
+{
+  "recursive": false
+}
+
+### 错误4: 删除非空文件夹 - 非递归模式
+DELETE {{fileurl}}/folder/[NON_EMPTY_FOLDER_ID]
+Content-Type: application/json
+X-User: test-user@example.com
+
+{
+  "recursive": false
+}

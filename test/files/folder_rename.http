@@ -1,0 +1,60 @@
+@fileurl=http://localhost:8080/api/v1/files
+
+### 重命名文件夹 (基本重命名)
+
+PUT {{fileurl}}/folder/abc123def456
+Content-Type: application/json
+X-User: test-user@example.com
+
+{
+  "new_name": "renamed-documents"
+}
+
+### 重命名文件夹 (重命名子文件夹)
+
+PUT {{fileurl}}/folder/def789ghi012
+Content-Type: application/json
+X-User: test-user@example.com
+
+{
+  "new_name": "renamed-subfolder"
+}
+
+### 重命名文件夹 (重命名到相同名称)
+
+PUT {{fileurl}}/folder/ghi345jkl678
+Content-Type: application/json
+X-User: test-user@example.com
+
+{
+  "new_name": "documents"
+}
+
+### 重命名文件夹 (错误 - 缺少新名称)
+
+PUT {{fileurl}}/folder/abc123def456
+Content-Type: application/json
+X-User: test-user@example.com
+
+{
+}
+
+### 重命名文件夹 (错误 - 文件夹不存在)
+
+PUT {{fileurl}}/folder/nonexistent123
+Content-Type: application/json
+X-User: test-user@example.com
+
+{
+  "new_name": "new-folder-name"
+}
+
+### 重命名文件夹 (错误 - 无权限访问)
+
+PUT {{fileurl}}/folder/abc123def456
+Content-Type: application/json
+X-User: other-user@example.com
+
+{
+  "new_name": "unauthorized-rename"
+}

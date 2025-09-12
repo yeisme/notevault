@@ -1,0 +1,57 @@
+@fileurl=http://localhost:8080/api/v1/files
+
+### 创建文件夹 (基本)
+
+POST {{fileurl}}/folder
+Content-Type: application/json
+X-User: test-user@example.com
+
+{
+  "name": "documents",
+  "description": "Document folder for testing"
+}
+
+### 创建文件夹 (带路径)
+
+POST {{fileurl}}/folder
+Content-Type: application/json
+X-User: test-user@example.com
+
+{
+  "name": "subfolder",
+  "path": "documents",
+  "description": "Subfolder under documents"
+}
+
+### 创建文件夹 (指定用户)
+
+POST {{fileurl}}/folder
+Content-Type: application/json
+X-User: admin@example.com
+
+{
+  "name": "admin-docs",
+  "user": "admin@example.com",
+  "description": "Admin documents folder"
+}
+
+### 创建文件夹 (根级文件夹)
+
+POST {{fileurl}}/folder
+Content-Type: application/json
+X-User: test-user@example.com
+
+{
+  "name": "root-folder",
+  "description": "Root level folder"
+}
+
+### 创建文件夹 (错误 - 缺少名称)
+
+POST {{fileurl}}/folder
+Content-Type: application/json
+X-User: test-user@example.com
+
+{
+  "description": "Missing name field"
+}
