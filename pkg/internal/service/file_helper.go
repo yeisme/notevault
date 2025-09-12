@@ -7,11 +7,19 @@ import (
 	"io"
 	"maps"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/minio/minio-go/v7"
 
+	"github.com/yeisme/notevault/pkg/internal/storage/s3"
 	"github.com/yeisme/notevault/pkg/internal/types"
+	nlog "github.com/yeisme/notevault/pkg/log"
+)
+
+const (
+	// DefaultSliceCapacity 默认slice预分配容量.
+	DefaultSliceCapacity = 100
 )
 
 // buildObjectKey 构建对象存储路径.放在 service 层便于未来统一策略（如目录分桶、版本号等）.
@@ -194,4 +202,153 @@ func (fs *FileService) uploadFile(ctx context.Context, bucket,
 	hash := fmt.Sprintf("%x", hasher.Sum(nil))
 
 	return hash, uploadInfo, nil
+}
+
+// findFolderPath 根据folderID查找文件夹路径和名称.
+// 注意：这是一个简化的实现，实际项目中应该从数据库查询.
+func findFolderPath(ctx context.Context, s3Client *s3.Client, bucket, user, folderID string) (path, name string, err error) {
+	// 扫描用户的所有文件夹对象，查找匹配的folderID
+	prefix := user + "/"
+
+	// 列出所有对象
+	opts := minio.ListObjectsOptions{
+		Prefix:    prefix,
+		Recursive: true,
+	}
+
+	objectCh := s3Client.ListObjects(ctx, bucket, opts)
+
+	for object := range objectCh {
+		if object.Err != nil {
+			return "", "", fmt.Errorf("list objects error: %v", object.Err)
+		}
+
+		// 检查是否是文件夹标记对象（以/结尾）
+		if strings.HasSuffix(object.Key, "/") {
+			// 移除用户前缀和末尾的/
+			folderPath := strings.TrimPrefix(strings.TrimSuffix(object.Key, "/"), user+"/")
+
+			// 计算folderID
+			expectedID := fmt.Sprintf("%x", md5.Sum([]byte(user+"/"+folderPath)))
+
+			if expectedID == folderID {
+				// 找到匹配的文件夹
+				if strings.Contains(folderPath, "/") {
+					parts := strings.Split(folderPath, "/")
+					return strings.Join(parts[:len(parts)-1], "/"), parts[len(parts)-1], nil
+				} else {
+					return "", folderPath, nil
+				}
+			}
+		}
+	}
+
+	return "", "", fmt.Errorf("folder not found")
+}
+
+// renameFolderObjects 重命名文件夹及其内容.
+func renameFolderObjects(ctx context.Context, s3Client *s3.Client, bucket, user, oldPath, newPath string) error {
+	oldPrefix := user + "/" + oldPath + "/"
+	newPrefix := user + "/" + newPath + "/"
+
+	// 如果是根级文件夹，需要特殊处理
+	if oldPath == "" {
+		oldPrefix = user + "/"
+	}
+
+	if newPath == "" {
+		newPrefix = user + "/"
+	}
+
+	// 收集需要重命名的对象
+	objectsToRename := make([]string, 0, DefaultSliceCapacity)
+
+	opts := minio.ListObjectsOptions{
+		Prefix:    oldPrefix,
+		Recursive: true,
+	}
+
+	objectCh := s3Client.ListObjects(ctx, bucket, opts)
+
+	for object := range objectCh {
+		if object.Err != nil {
+			return fmt.Errorf("list objects error: %v", object.Err)
+		}
+
+		objectsToRename = append(objectsToRename, object.Key)
+	}
+
+	// 重命名每个对象
+	for _, oldKey := range objectsToRename {
+		// 生成新键
+		newKey := strings.Replace(oldKey, oldPrefix, newPrefix, 1)
+
+		// 复制对象到新位置
+		src := minio.CopySrcOptions{
+			Bucket: bucket,
+			Object: oldKey,
+		}
+		dst := minio.CopyDestOptions{
+			Bucket: bucket,
+			Object: newKey,
+		}
+
+		_, err := s3Client.CopyObject(ctx, dst, src)
+		if err != nil {
+			return fmt.Errorf("copy object %s to %s: %v", oldKey, newKey, err)
+		}
+
+		// 删除旧对象
+		err = s3Client.RemoveObject(ctx, bucket, oldKey, minio.RemoveObjectOptions{})
+		if err != nil {
+			nlog.Logger().Warn().Err(err).Str("object", oldKey).Msg("failed to remove old object after copy")
+			// 不返回错误，继续处理其他对象
+		}
+	}
+
+	return nil
+}
+
+// deleteFolderObjects 删除文件夹及其内容.
+func deleteFolderObjects(ctx context.Context, s3Client *s3.Client, bucket, folderPrefix string, recursive bool) (int, error) {
+	var (
+		deletedCount    int
+		objectsToDelete = make([]minio.ObjectInfo, 0, DefaultSliceCapacity)
+	)
+
+	// 收集需要删除的对象
+	opts := minio.ListObjectsOptions{
+		Prefix:    folderPrefix,
+		Recursive: recursive,
+	}
+
+	objectCh := s3Client.ListObjects(ctx, bucket, opts)
+
+	for object := range objectCh {
+		if object.Err != nil {
+			return deletedCount, fmt.Errorf("list objects error: %v", object.Err)
+		}
+
+		objectsToDelete = append(objectsToDelete, object)
+	}
+
+	// 检查是否是空文件夹（如果不是递归删除）
+	if !recursive && len(objectsToDelete) > 1 {
+		// 如果有多个对象（除了文件夹标记本身），说明文件夹不为空
+		return 0, fmt.Errorf("folder is not empty, use recursive=true to delete all contents")
+	}
+
+	// 删除对象
+	for _, object := range objectsToDelete {
+		err := s3Client.RemoveObject(ctx, bucket, object.Key, minio.RemoveObjectOptions{})
+		if err != nil {
+			nlog.Logger().Warn().Err(err).Str("object", object.Key).Msg("failed to delete object")
+			// 继续删除其他对象，不中断整个操作
+			continue
+		}
+
+		deletedCount++
+	}
+
+	return deletedCount, nil
 }

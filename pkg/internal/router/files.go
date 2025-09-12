@@ -31,9 +31,9 @@ func RegisterFilesRoutes(g *gin.RouterGroup) {
 		// ===== 文件夹管理路由 =====
 		folderGroup := filesRoutes.Group("/folder")
 		{
-			folderGroup.POST("", handle.DefaultHandler)       // 创建文件夹
-			folderGroup.PUT("/:id", handle.DefaultHandler)    // 重命名文件夹
-			folderGroup.DELETE("/:id", handle.DefaultHandler) // 删除文件夹
+			folderGroup.POST("", handle.CreateFolder)       // 创建文件夹
+			folderGroup.PUT("/:id", handle.RenameFolder)    // 重命名文件夹
+			folderGroup.DELETE("/:id", handle.DeleteFolder) // 删除文件夹
 		}
 
 		// ===== 文件操作路由（支持单个和批量） =====
