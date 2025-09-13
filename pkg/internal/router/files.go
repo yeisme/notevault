@@ -53,10 +53,10 @@ func RegisterFilesRoutes(g *gin.RouterGroup) {
 		// ===== 文件版本管理路由 =====
 		versionGroup := filesRoutes.Group("/versions")
 		{
-			versionGroup.GET("/:fileId", handle.DefaultHandler)                     // 获取版本列表
-			versionGroup.POST("/:fileId", handle.DefaultHandler)                    // 创建新版本
-			versionGroup.DELETE("/:fileId/:versionId", handle.DefaultHandler)       // 删除指定版本
-			versionGroup.POST("/:fileId/:versionId/restore", handle.DefaultHandler) // 恢复到指定版本
+			versionGroup.GET("/:fileId", handle.ListFileVersions)                       // 获取版本列表
+			versionGroup.POST("/:fileId", handle.CreateFileVersion)                     // 创建新版本
+			versionGroup.DELETE("/:fileId/:versionId", handle.DeleteFileVersion)        // 删除指定版本
+			versionGroup.POST("/:fileId/:versionId/restore", handle.RestoreFileVersion) // 恢复到指定版本
 		}
 	}
 
