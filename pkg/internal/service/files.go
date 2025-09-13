@@ -2,11 +2,17 @@ package service
 
 import (
 	"context"
+	"fmt"
+	"strings"
+	"time"
+
+	"github.com/minio/minio-go/v7"
 
 	ctxPkg "github.com/yeisme/notevault/pkg/context"
 	"github.com/yeisme/notevault/pkg/internal/storage/db"
 	"github.com/yeisme/notevault/pkg/internal/storage/mq"
 	"github.com/yeisme/notevault/pkg/internal/storage/s3"
+	"github.com/yeisme/notevault/pkg/internal/types"
 	nlog "github.com/yeisme/notevault/pkg/log"
 )
 
@@ -33,4 +39,56 @@ func NewFileService(c context.Context) *FileService {
 		dbClient: dbc,
 		mqClient: mqc,
 	}
+}
+
+// ListFilesByMonth lists user's files for a given UTC year-month (YYYY, MM).
+// It scans objects with prefix "user/YYYY/MM/" and returns their basic info.
+func (fs *FileService) ListFilesByMonth(ctx context.Context, user string, year int, month time.Month) ([]types.ObjectInfo, error) { //nolint:ireturn
+	if user == "" {
+		return nil, fmt.Errorf("user is required")
+	}
+
+	bucket, err := fs.defaultBucket()
+	if err != nil {
+		return nil, err
+	}
+
+	// Prefix pattern matches buildObjectKey's datePath = YYYY/MM
+	prefix := fmt.Sprintf("%s/%04d/%02d/", user, year, int(month))
+
+	// List objects under the prefix
+	opts := minio.ListObjectsOptions{Prefix: prefix, Recursive: true}
+	ch := fs.s3Client.ListObjects(ctx, bucket, opts)
+
+	files := make([]types.ObjectInfo, 0, DefaultSliceCapacity)
+
+	for obj := range ch {
+		if obj.Err != nil {
+			return nil, fmt.Errorf("list objects: %v", obj.Err)
+		}
+		// skip "folders"
+		if strings.HasSuffix(obj.Key, "/") {
+			continue
+		}
+
+		files = append(files, types.ObjectInfo{
+			ObjectKey: obj.Key,
+			Size:      obj.Size,
+			ETag:      strings.Trim(obj.ETag, "\""),
+			// ContentType not available in ListObjects; leave empty to be filled by Stat when needed
+			LastModified: obj.LastModified.UTC().Format(time.RFC3339),
+			VersionID:    obj.VersionID,
+			StorageClass: obj.StorageClass,
+			Bucket:       bucket,
+			UserMetadata: nil,
+		})
+	}
+
+	return files, nil
+}
+
+// ListFilesThisMonth lists files for the current UTC year-month.
+func (fs *FileService) ListFilesThisMonth(ctx context.Context, user string, now time.Time) ([]types.ObjectInfo, error) { //nolint:ireturn
+	y, m, _ := now.UTC().Date()
+	return fs.ListFilesByMonth(ctx, user, y, m)
 }
