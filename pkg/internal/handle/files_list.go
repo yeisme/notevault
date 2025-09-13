@@ -21,10 +21,11 @@ import (
 //	@Tags			文件查询
 //	@Accept			json
 //	@Produce		json
-//	@Param			year	query		string						default(now.year())	"年份，格式为YYYY，例如2023"	Format(YYYY)	Example(2023)
-//	@Success		200		{object}	types.ListFilesThisMonth	"文件列表"
-//	@Failure		400		{object}	map[string]string			"请求参数错误"
-//	@Failure		500		{object}	map[string]string			"服务器内部错误"
+//	@Param			year	query		int						false	"年份，格式为YYYY，例如2023"
+//	@Param			month	query		int						false	"月份，格式为MM，例如09"
+//	@Success		200		{object}	types.ListFilesResponse	"文件列表"
+//	@Failure		400		{object}	map[string]string		"请求参数错误"
+//	@Failure		500		{object}	map[string]string		"服务器内部错误"
 //	@Router			/api/v1/files/list [get]
 func ListFilesThisMonth(c *gin.Context) {
 	l := log.Logger()

@@ -1,7 +1,7 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "NoteVault 是一个安全的笔记和文件存储服务，提供用户注册、登录、笔记管理和文件上传等功能。",
+        "description": "NoteVault 是一个安全的笔记和文件存储服务，提供用户注册、登录、笔记管理和文件上传等功能.",
         "title": "NoteVault API",
         "contact": {
             "name": "yeisme",
@@ -14,7 +14,213 @@
         "version": "1.0"
     },
     "paths": {
-        "/download/url": {
+        "/api/v1/files": {
+            "put": {
+                "description": "根据对象键与属性更新元数据，支持批量更新。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "文件操作"
+                ],
+                "summary": "更新文件元数据(单个/批量)",
+                "parameters": [
+                    {
+                        "description": "更新元数据请求",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.UpdateFilesMetadataRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新结果",
+                        "schema": {
+                            "$ref": "#/definitions/types.UpdateFilesMetadataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "根据对象键列表删除文件，支持批量删除。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "文件操作"
+                ],
+                "summary": "删除文件(单个/批量)",
+                "parameters": [
+                    {
+                        "description": "删除请求",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.DeleteFilesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "删除结果",
+                        "schema": {
+                            "$ref": "#/definitions/types.DeleteFilesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/files/copy": {
+            "post": {
+                "description": "将源对象复制到目标对象，支持批量复制。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "文件操作"
+                ],
+                "summary": "复制文件(单个/批量)",
+                "parameters": [
+                    {
+                        "description": "复制请求",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.CopyFilesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "复制结果",
+                        "schema": {
+                            "$ref": "#/definitions/types.CopyFilesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/files/download": {
+            "post": {
+                "description": "当对象数量为1且未指定archive时，直接返回文件流；否则按zip打包返回，同时会在响应头附带部分元信息。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "文件下载"
+                ],
+                "summary": "下载文件（直传/打包）",
+                "parameters": [
+                    {
+                        "description": "下载请求",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.DownloadFilesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "文件流或zip包",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/files/download/url": {
             "post": {
                 "description": "为文件获取预签名的访问URL，支持单个或批量对象",
                 "consumes": [
@@ -43,6 +249,560 @@
                         "description": "预签名访问URL响应",
                         "schema": {
                             "$ref": "#/definitions/types.GetFilesURLResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/files/folder": {
+            "post": {
+                "description": "创建新的文件夹，支持指定父路径和描述",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "文件夹管理"
+                ],
+                "summary": "创建文件夹",
+                "parameters": [
+                    {
+                        "description": "创建文件夹请求",
+                        "name": "folder",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.CreateFolderRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "文件夹创建响应",
+                        "schema": {
+                            "$ref": "#/definitions/types.CreateFolderResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/files/folder/{id}": {
+            "put": {
+                "description": "重命名指定的文件夹",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "文件夹管理"
+                ],
+                "summary": "重命名文件夹",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "文件夹ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "重命名文件夹请求",
+                        "name": "folder",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.RenameFolderRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "文件夹重命名响应",
+                        "schema": {
+                            "$ref": "#/definitions/types.RenameFolderResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "文件夹不存在",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "删除指定的文件夹，支持递归删除",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "文件夹管理"
+                ],
+                "summary": "删除文件夹",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "文件夹ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "删除文件夹请求",
+                        "name": "folder",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/types.DeleteFolderRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "文件夹删除响应",
+                        "schema": {
+                            "$ref": "#/definitions/types.DeleteFolderResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "文件夹不存在",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/files/list": {
+            "get": {
+                "description": "列出用户当月的文件，并返回对象信息列表。支持通过查询参数 year 和 month 指定年份和月份。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "文件查询"
+                ],
+                "summary": "列出用户当月的文件",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "年份，格式为YYYY，例如2023",
+                        "name": "year",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "月份，格式为MM，例如09",
+                        "name": "month",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "文件列表",
+                        "schema": {
+                            "$ref": "#/definitions/types.ListFilesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/files/move": {
+            "post": {
+                "description": "将源对象移动到目标对象，支持批量移动。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "文件操作"
+                ],
+                "summary": "移动文件(单个/批量)",
+                "parameters": [
+                    {
+                        "description": "移动请求",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.MoveFilesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "移动结果",
+                        "schema": {
+                            "$ref": "#/definitions/types.MoveFilesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/files/upload/batch": {
+            "post": {
+                "description": "直接上传多个小文件，支持为每个文件指定元数据",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "文件上传"
+                ],
+                "summary": "批量上传小文件",
+                "parameters": [
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "file"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "上传的文件数组",
+                        "name": "files",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "元数据JSON数组",
+                        "name": "metadata",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "批量文件上传响应",
+                        "schema": {
+                            "$ref": "#/definitions/types.UploadBatchFilesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/files/upload/single": {
+            "post": {
+                "description": "直接上传单个小文件，支持自定义文件名、标签、描述等元数据",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "文件上传"
+                ],
+                "summary": "上传单个小文件",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "上传的文件",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "自定义文件名",
+                        "name": "file_name",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "标签(JSON格式)",
+                        "name": "tags",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "文件描述",
+                        "name": "description",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "内容类型",
+                        "name": "content_type",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "文件分类",
+                        "name": "category",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "文件夹路径",
+                        "name": "folder",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否公开",
+                        "name": "is_public",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "过期天数",
+                        "name": "expiry_days",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "文件上传响应",
+                        "schema": {
+                            "$ref": "#/definitions/types.UploadFileResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/files/upload/urls": {
+            "post": {
+                "description": "为文件上传生成预签名的PUT URL，不使用策略控制，客户端可直接PUT上传文件",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "文件上传"
+                ],
+                "summary": "生成预签名PUT上传URL",
+                "parameters": [
+                    {
+                        "description": "文件上传请求",
+                        "name": "files",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.UploadFilesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "预签名URL响应",
+                        "schema": {
+                            "$ref": "#/definitions/types.UploadFilesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/files/upload/urls/policy": {
+            "post": {
+                "description": "为文件上传生成预签名的POST URL，使用策略控制文件类型、大小等限制",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "文件上传"
+                ],
+                "summary": "生成预签名POST上传URL",
+                "parameters": [
+                    {
+                        "description": "带策略的文件上传请求",
+                        "name": "files",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.UploadFilesRequestPolicy"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "预签名URL和表单数据响应",
+                        "schema": {
+                            "$ref": "#/definitions/types.UploadFilesResponsePolicy"
                         }
                     },
                     "400": {
@@ -161,113 +921,246 @@
                     }
                 }
             }
-        },
-        "/upload/urls": {
-            "post": {
-                "description": "为文件上传生成预签名的PUT URL，不使用策略控制，客户端可直接PUT上传文件",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "文件上传"
-                ],
-                "summary": "生成预签名PUT上传URL",
-                "parameters": [
-                    {
-                        "description": "文件上传请求",
-                        "name": "files",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/types.UploadFilesRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "预签名URL响应",
-                        "schema": {
-                            "$ref": "#/definitions/types.UploadFilesResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/upload/urls/policy": {
-            "post": {
-                "description": "为文件上传生成预签名的POST URL，使用策略控制文件类型、大小等限制",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "文件上传"
-                ],
-                "summary": "生成预签名POST上传URL",
-                "parameters": [
-                    {
-                        "description": "带策略的文件上传请求",
-                        "name": "files",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/types.UploadFilesRequestPolicy"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "预签名URL和表单数据响应",
-                        "schema": {
-                            "$ref": "#/definitions/types.UploadFilesResponsePolicy"
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
         }
     },
     "definitions": {
+        "types.CopyFileItem": {
+            "type": "object",
+            "required": [
+                "destination_key",
+                "source_key"
+            ],
+            "properties": {
+                "destination_key": {
+                    "description": "目标文件对象键",
+                    "type": "string"
+                },
+                "source_key": {
+                    "description": "源文件对象键",
+                    "type": "string"
+                }
+            }
+        },
+        "types.CopyFileResult": {
+            "type": "object",
+            "properties": {
+                "destination_key": {
+                    "type": "string"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "source_key": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "types.CopyFilesRequest": {
+            "type": "object",
+            "required": [
+                "items"
+            ],
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.CopyFileItem"
+                    }
+                }
+            }
+        },
+        "types.CopyFilesResponse": {
+            "type": "object",
+            "properties": {
+                "failed": {
+                    "type": "integer"
+                },
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.CopyFileResult"
+                    }
+                },
+                "success": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "types.CreateFolderRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "description": "文件夹描述",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "文件夹名称",
+                    "type": "string"
+                },
+                "path": {
+                    "description": "父路径（可选）",
+                    "type": "string"
+                },
+                "user": {
+                    "description": "所属用户（可选，默认当前用户，添加前缀）",
+                    "type": "string"
+                }
+            }
+        },
+        "types.CreateFolderResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "folder_id": {
+                    "type": "string"
+                },
+                "full_path": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "types.DeleteFileResult": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "object_key": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "types.DeleteFilesRequest": {
+            "type": "object",
+            "required": [
+                "object_keys"
+            ],
+            "properties": {
+                "object_keys": {
+                    "description": "要删除的文件对象键列表",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "types.DeleteFilesResponse": {
+            "type": "object",
+            "properties": {
+                "failed": {
+                    "type": "integer"
+                },
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.DeleteFileResult"
+                    }
+                },
+                "success": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "types.DeleteFolderRequest": {
+            "type": "object",
+            "properties": {
+                "recursive": {
+                    "description": "是否递归删除子文件夹和文件",
+                    "type": "boolean"
+                }
+            }
+        },
+        "types.DeleteFolderResponse": {
+            "type": "object",
+            "properties": {
+                "deleted_files": {
+                    "description": "删除的文件数量",
+                    "type": "integer"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "folder_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "types.DownloadFilesRequest": {
+            "type": "object",
+            "required": [
+                "objects"
+            ],
+            "properties": {
+                "archive": {
+                    "description": "可选：当为 true 且对象数量\u003e1 时，打包为 zip 返回",
+                    "type": "boolean"
+                },
+                "archive_name": {
+                    "description": "可选：打包文件名（仅当 Archive=true 或多文件时生效），例如 my-photos.zip",
+                    "type": "string"
+                },
+                "objects": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.DownloadObjectItem"
+                    }
+                }
+            }
+        },
+        "types.DownloadObjectItem": {
+            "type": "object",
+            "required": [
+                "object_key"
+            ],
+            "properties": {
+                "file_name": {
+                    "description": "可选：指定在 zip 中的文件名；未提供则使用对象键的最后一段",
+                    "type": "string"
+                },
+                "object_key": {
+                    "type": "string"
+                }
+            }
+        },
         "types.GetFileURLItem": {
             "type": "object",
             "required": [
@@ -322,6 +1215,128 @@
                     "items": {
                         "$ref": "#/definitions/types.PresignedDownloadItem"
                     }
+                }
+            }
+        },
+        "types.ListFilesResponse": {
+            "type": "object",
+            "properties": {
+                "files": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.ObjectInfo"
+                    }
+                },
+                "month": {
+                    "description": "e.g. 2025-09",
+                    "type": "string"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "types.MoveFileItem": {
+            "type": "object",
+            "required": [
+                "destination_key",
+                "source_key"
+            ],
+            "properties": {
+                "destination_key": {
+                    "description": "目标文件对象键",
+                    "type": "string"
+                },
+                "source_key": {
+                    "description": "源文件对象键",
+                    "type": "string"
+                }
+            }
+        },
+        "types.MoveFileResult": {
+            "type": "object",
+            "properties": {
+                "destination_key": {
+                    "type": "string"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "source_key": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "types.MoveFilesRequest": {
+            "type": "object",
+            "required": [
+                "items"
+            ],
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.MoveFileItem"
+                    }
+                }
+            }
+        },
+        "types.MoveFilesResponse": {
+            "type": "object",
+            "properties": {
+                "failed": {
+                    "type": "integer"
+                },
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.MoveFileResult"
+                    }
+                },
+                "success": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "types.ObjectInfo": {
+            "type": "object",
+            "properties": {
+                "bucket": {
+                    "type": "string"
+                },
+                "content_type": {
+                    "type": "string"
+                },
+                "etag": {
+                    "type": "string"
+                },
+                "last_modified": {
+                    "description": "RFC3339",
+                    "type": "string"
+                },
+                "object_key": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "integer"
+                },
+                "storage_class": {
+                    "type": "string"
+                },
+                "user_metadata": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "version_id": {
+                    "type": "string"
                 }
             }
         },
@@ -380,6 +1395,142 @@
                 }
             }
         },
+        "types.RenameFolderRequest": {
+            "type": "object",
+            "required": [
+                "new_name"
+            ],
+            "properties": {
+                "new_name": {
+                    "description": "新文件夹名称",
+                    "type": "string"
+                }
+            }
+        },
+        "types.RenameFolderResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "folder_id": {
+                    "type": "string"
+                },
+                "new_name": {
+                    "type": "string"
+                },
+                "old_name": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "types.UpdateFileMetadataItem": {
+            "type": "object",
+            "required": [
+                "object_key"
+            ],
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "content_type": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "is_public": {
+                    "description": "使用指针以区分未设置和false",
+                    "type": "boolean"
+                },
+                "object_key": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "types.UpdateFileMetadataResult": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "object_key": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "types.UpdateFilesMetadataRequest": {
+            "type": "object",
+            "required": [
+                "items"
+            ],
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.UpdateFileMetadataItem"
+                    }
+                }
+            }
+        },
+        "types.UpdateFilesMetadataResponse": {
+            "type": "object",
+            "properties": {
+                "failed": {
+                    "type": "integer"
+                },
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.UpdateFileMetadataResult"
+                    }
+                },
+                "success": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "types.UploadBatchFilesResponse": {
+            "type": "object",
+            "properties": {
+                "failed": {
+                    "type": "integer"
+                },
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.UploadFileResponse"
+                    }
+                },
+                "successful": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
         "types.UploadFileItem": {
             "type": "object",
             "properties": {
@@ -416,6 +1567,56 @@
                     "additionalProperties": {
                         "type": "string"
                     }
+                }
+            }
+        },
+        "types.UploadFileResponse": {
+            "type": "object",
+            "properties": {
+                "bucket": {
+                    "type": "string"
+                },
+                "content_type": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "etag": {
+                    "type": "string"
+                },
+                "file_name": {
+                    "type": "string"
+                },
+                "hash": {
+                    "type": "string"
+                },
+                "last_modified": {
+                    "type": "string"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "object_key": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "integer"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "tags": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "version_id": {
+                    "type": "string"
                 }
             }
         },

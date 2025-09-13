@@ -1,4 +1,162 @@
 definitions:
+  types.CopyFileItem:
+    properties:
+      destination_key:
+        description: 目标文件对象键
+        type: string
+      source_key:
+        description: 源文件对象键
+        type: string
+    required:
+    - destination_key
+    - source_key
+    type: object
+  types.CopyFileResult:
+    properties:
+      destination_key:
+        type: string
+      error:
+        type: string
+      source_key:
+        type: string
+      success:
+        type: boolean
+    type: object
+  types.CopyFilesRequest:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/types.CopyFileItem'
+        type: array
+    required:
+    - items
+    type: object
+  types.CopyFilesResponse:
+    properties:
+      failed:
+        type: integer
+      results:
+        items:
+          $ref: '#/definitions/types.CopyFileResult'
+        type: array
+      success:
+        type: integer
+      total:
+        type: integer
+    type: object
+  types.CreateFolderRequest:
+    properties:
+      description:
+        description: 文件夹描述
+        type: string
+      name:
+        description: 文件夹名称
+        type: string
+      path:
+        description: 父路径（可选）
+        type: string
+      user:
+        description: 所属用户（可选，默认当前用户，添加前缀）
+        type: string
+    required:
+    - name
+    type: object
+  types.CreateFolderResponse:
+    properties:
+      created_at:
+        type: string
+      error:
+        type: string
+      folder_id:
+        type: string
+      full_path:
+        type: string
+      name:
+        type: string
+      path:
+        type: string
+      success:
+        type: boolean
+    type: object
+  types.DeleteFileResult:
+    properties:
+      error:
+        type: string
+      object_key:
+        type: string
+      success:
+        type: boolean
+    type: object
+  types.DeleteFilesRequest:
+    properties:
+      object_keys:
+        description: 要删除的文件对象键列表
+        items:
+          type: string
+        type: array
+    required:
+    - object_keys
+    type: object
+  types.DeleteFilesResponse:
+    properties:
+      failed:
+        type: integer
+      results:
+        items:
+          $ref: '#/definitions/types.DeleteFileResult'
+        type: array
+      success:
+        type: integer
+      total:
+        type: integer
+    type: object
+  types.DeleteFolderRequest:
+    properties:
+      recursive:
+        description: 是否递归删除子文件夹和文件
+        type: boolean
+    type: object
+  types.DeleteFolderResponse:
+    properties:
+      deleted_files:
+        description: 删除的文件数量
+        type: integer
+      error:
+        type: string
+      folder_id:
+        type: string
+      name:
+        type: string
+      path:
+        type: string
+      success:
+        type: boolean
+    type: object
+  types.DownloadFilesRequest:
+    properties:
+      archive:
+        description: 可选：当为 true 且对象数量>1 时，打包为 zip 返回
+        type: boolean
+      archive_name:
+        description: 可选：打包文件名（仅当 Archive=true 或多文件时生效），例如 my-photos.zip
+        type: string
+      objects:
+        items:
+          $ref: '#/definitions/types.DownloadObjectItem'
+        type: array
+    required:
+    - objects
+    type: object
+  types.DownloadObjectItem:
+    properties:
+      file_name:
+        description: 可选：指定在 zip 中的文件名；未提供则使用对象键的最后一段
+        type: string
+      object_key:
+        type: string
+    required:
+    - object_key
+    type: object
   types.GetFileURLItem:
     properties:
       object_key:
@@ -36,6 +194,87 @@ definitions:
         items:
           $ref: '#/definitions/types.PresignedDownloadItem'
         type: array
+    type: object
+  types.ListFilesResponse:
+    properties:
+      files:
+        items:
+          $ref: '#/definitions/types.ObjectInfo'
+        type: array
+      month:
+        description: e.g. 2025-09
+        type: string
+      total:
+        type: integer
+    type: object
+  types.MoveFileItem:
+    properties:
+      destination_key:
+        description: 目标文件对象键
+        type: string
+      source_key:
+        description: 源文件对象键
+        type: string
+    required:
+    - destination_key
+    - source_key
+    type: object
+  types.MoveFileResult:
+    properties:
+      destination_key:
+        type: string
+      error:
+        type: string
+      source_key:
+        type: string
+      success:
+        type: boolean
+    type: object
+  types.MoveFilesRequest:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/types.MoveFileItem'
+        type: array
+    required:
+    - items
+    type: object
+  types.MoveFilesResponse:
+    properties:
+      failed:
+        type: integer
+      results:
+        items:
+          $ref: '#/definitions/types.MoveFileResult'
+        type: array
+      success:
+        type: integer
+      total:
+        type: integer
+    type: object
+  types.ObjectInfo:
+    properties:
+      bucket:
+        type: string
+      content_type:
+        type: string
+      etag:
+        type: string
+      last_modified:
+        description: RFC3339
+        type: string
+      object_key:
+        type: string
+      size:
+        type: integer
+      storage_class:
+        type: string
+      user_metadata:
+        additionalProperties:
+          type: string
+        type: object
+      version_id:
+        type: string
     type: object
   types.PresignedDownloadItem:
     properties:
@@ -75,6 +314,95 @@ definitions:
         description: 上传 URL
         type: string
     type: object
+  types.RenameFolderRequest:
+    properties:
+      new_name:
+        description: 新文件夹名称
+        type: string
+    required:
+    - new_name
+    type: object
+  types.RenameFolderResponse:
+    properties:
+      error:
+        type: string
+      folder_id:
+        type: string
+      new_name:
+        type: string
+      old_name:
+        type: string
+      path:
+        type: string
+      success:
+        type: boolean
+      updated_at:
+        type: string
+    type: object
+  types.UpdateFileMetadataItem:
+    properties:
+      category:
+        type: string
+      content_type:
+        type: string
+      description:
+        type: string
+      is_public:
+        description: 使用指针以区分未设置和false
+        type: boolean
+      object_key:
+        type: string
+      tags:
+        additionalProperties:
+          type: string
+        type: object
+    required:
+    - object_key
+    type: object
+  types.UpdateFileMetadataResult:
+    properties:
+      error:
+        type: string
+      object_key:
+        type: string
+      success:
+        type: boolean
+    type: object
+  types.UpdateFilesMetadataRequest:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/types.UpdateFileMetadataItem'
+        type: array
+    required:
+    - items
+    type: object
+  types.UpdateFilesMetadataResponse:
+    properties:
+      failed:
+        type: integer
+      results:
+        items:
+          $ref: '#/definitions/types.UpdateFileMetadataResult'
+        type: array
+      success:
+        type: integer
+      total:
+        type: integer
+    type: object
+  types.UploadBatchFilesResponse:
+    properties:
+      failed:
+        type: integer
+      results:
+        items:
+          $ref: '#/definitions/types.UploadFileResponse'
+        type: array
+      successful:
+        type: integer
+      total:
+        type: integer
+    type: object
   types.UploadFileItem:
     properties:
       content_disposition:
@@ -102,6 +430,39 @@ definitions:
           type: string
         description: 可选：用户元数据
         type: object
+    type: object
+  types.UploadFileResponse:
+    properties:
+      bucket:
+        type: string
+      content_type:
+        type: string
+      description:
+        type: string
+      error:
+        type: string
+      etag:
+        type: string
+      file_name:
+        type: string
+      hash:
+        type: string
+      last_modified:
+        type: string
+      location:
+        type: string
+      object_key:
+        type: string
+      size:
+        type: integer
+      success:
+        type: boolean
+      tags:
+        additionalProperties:
+          type: string
+        type: object
+      version_id:
+        type: string
     type: object
   types.UploadFilesRequest:
     properties:
@@ -139,14 +500,149 @@ info:
   contact:
     email: yefun2004@gmail.com.
     name: yeisme
-  description: NoteVault 是一个安全的笔记和文件存储服务，提供用户注册、登录、笔记管理和文件上传等功能。
+  description: NoteVault 是一个安全的笔记和文件存储服务，提供用户注册、登录、笔记管理和文件上传等功能.
   license:
     name: MIT
     url: https://opensource.org/license/mit/
   title: NoteVault API
   version: "1.0"
 paths:
-  /download/url:
+  /api/v1/files:
+    delete:
+      consumes:
+      - application/json
+      description: 根据对象键列表删除文件，支持批量删除。
+      parameters:
+      - description: 删除请求
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/types.DeleteFilesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除结果
+          schema:
+            $ref: '#/definitions/types.DeleteFilesResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: 服务器内部错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 删除文件(单个/批量)
+      tags:
+      - 文件操作
+    put:
+      consumes:
+      - application/json
+      description: 根据对象键与属性更新元数据，支持批量更新。
+      parameters:
+      - description: 更新元数据请求
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/types.UpdateFilesMetadataRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新结果
+          schema:
+            $ref: '#/definitions/types.UpdateFilesMetadataResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: 服务器内部错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 更新文件元数据(单个/批量)
+      tags:
+      - 文件操作
+  /api/v1/files/copy:
+    post:
+      consumes:
+      - application/json
+      description: 将源对象复制到目标对象，支持批量复制。
+      parameters:
+      - description: 复制请求
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/types.CopyFilesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 复制结果
+          schema:
+            $ref: '#/definitions/types.CopyFilesResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: 服务器内部错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 复制文件(单个/批量)
+      tags:
+      - 文件操作
+  /api/v1/files/download:
+    post:
+      consumes:
+      - application/json
+      description: 当对象数量为1且未指定archive时，直接返回文件流；否则按zip打包返回，同时会在响应头附带部分元信息。
+      parameters:
+      - description: 下载请求
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/types.DownloadFilesRequest'
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: 文件流或zip包
+          schema:
+            type: file
+        "400":
+          description: 请求参数错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: 服务器内部错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 下载文件（直传/打包）
+      tags:
+      - 文件下载
+  /api/v1/files/download/url:
     post:
       consumes:
       - application/json
@@ -180,6 +676,371 @@ paths:
       summary: 获取文件访问URL
       tags:
       - 文件下载
+  /api/v1/files/folder:
+    post:
+      consumes:
+      - application/json
+      description: 创建新的文件夹，支持指定父路径和描述
+      parameters:
+      - description: 创建文件夹请求
+        in: body
+        name: folder
+        required: true
+        schema:
+          $ref: '#/definitions/types.CreateFolderRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 文件夹创建响应
+          schema:
+            $ref: '#/definitions/types.CreateFolderResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: 服务器内部错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 创建文件夹
+      tags:
+      - 文件夹管理
+  /api/v1/files/folder/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 删除指定的文件夹，支持递归删除
+      parameters:
+      - description: 文件夹ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 删除文件夹请求
+        in: body
+        name: folder
+        schema:
+          $ref: '#/definitions/types.DeleteFolderRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 文件夹删除响应
+          schema:
+            $ref: '#/definitions/types.DeleteFolderResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: 文件夹不存在
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: 服务器内部错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 删除文件夹
+      tags:
+      - 文件夹管理
+    put:
+      consumes:
+      - application/json
+      description: 重命名指定的文件夹
+      parameters:
+      - description: 文件夹ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 重命名文件夹请求
+        in: body
+        name: folder
+        required: true
+        schema:
+          $ref: '#/definitions/types.RenameFolderRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 文件夹重命名响应
+          schema:
+            $ref: '#/definitions/types.RenameFolderResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: 文件夹不存在
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: 服务器内部错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 重命名文件夹
+      tags:
+      - 文件夹管理
+  /api/v1/files/list:
+    get:
+      consumes:
+      - application/json
+      description: 列出用户当月的文件，并返回对象信息列表。支持通过查询参数 year 和 month 指定年份和月份。
+      parameters:
+      - description: 年份，格式为YYYY，例如2023
+        in: query
+        name: year
+        type: integer
+      - description: 月份，格式为MM，例如09
+        in: query
+        name: month
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 文件列表
+          schema:
+            $ref: '#/definitions/types.ListFilesResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: 服务器内部错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 列出用户当月的文件
+      tags:
+      - 文件查询
+  /api/v1/files/move:
+    post:
+      consumes:
+      - application/json
+      description: 将源对象移动到目标对象，支持批量移动。
+      parameters:
+      - description: 移动请求
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/types.MoveFilesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 移动结果
+          schema:
+            $ref: '#/definitions/types.MoveFilesResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: 服务器内部错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 移动文件(单个/批量)
+      tags:
+      - 文件操作
+  /api/v1/files/upload/batch:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 直接上传多个小文件，支持为每个文件指定元数据
+      parameters:
+      - collectionFormat: csv
+        description: 上传的文件数组
+        in: formData
+        items:
+          type: file
+        name: files
+        required: true
+        type: array
+      - description: 元数据JSON数组
+        in: formData
+        name: metadata
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 批量文件上传响应
+          schema:
+            $ref: '#/definitions/types.UploadBatchFilesResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: 服务器内部错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 批量上传小文件
+      tags:
+      - 文件上传
+  /api/v1/files/upload/single:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 直接上传单个小文件，支持自定义文件名、标签、描述等元数据
+      parameters:
+      - description: 上传的文件
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: 自定义文件名
+        in: formData
+        name: file_name
+        type: string
+      - description: 标签(JSON格式)
+        in: formData
+        name: tags
+        type: string
+      - description: 文件描述
+        in: formData
+        name: description
+        type: string
+      - description: 内容类型
+        in: formData
+        name: content_type
+        type: string
+      - description: 文件分类
+        in: formData
+        name: category
+        type: string
+      - description: 文件夹路径
+        in: formData
+        name: folder
+        type: string
+      - description: 是否公开
+        in: formData
+        name: is_public
+        type: boolean
+      - description: 过期天数
+        in: formData
+        name: expiry_days
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 文件上传响应
+          schema:
+            $ref: '#/definitions/types.UploadFileResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: 服务器内部错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 上传单个小文件
+      tags:
+      - 文件上传
+  /api/v1/files/upload/urls:
+    post:
+      consumes:
+      - application/json
+      description: 为文件上传生成预签名的PUT URL，不使用策略控制，客户端可直接PUT上传文件
+      parameters:
+      - description: 文件上传请求
+        in: body
+        name: files
+        required: true
+        schema:
+          $ref: '#/definitions/types.UploadFilesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 预签名URL响应
+          schema:
+            $ref: '#/definitions/types.UploadFilesResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: 服务器内部错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 生成预签名PUT上传URL
+      tags:
+      - 文件上传
+  /api/v1/files/upload/urls/policy:
+    post:
+      consumes:
+      - application/json
+      description: 为文件上传生成预签名的POST URL，使用策略控制文件类型、大小等限制
+      parameters:
+      - description: 带策略的文件上传请求
+        in: body
+        name: files
+        required: true
+        schema:
+          $ref: '#/definitions/types.UploadFilesRequestPolicy'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 预签名URL和表单数据响应
+          schema:
+            $ref: '#/definitions/types.UploadFilesResponsePolicy'
+        "400":
+          description: 请求参数错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: 服务器内部错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 生成预签名POST上传URL
+      tags:
+      - 文件上传
   /health/db:
     get:
       description: 检查数据库连接是否正常
@@ -243,72 +1104,4 @@ paths:
       summary: S3健康检查
       tags:
       - 健康检查
-  /upload/urls:
-    post:
-      consumes:
-      - application/json
-      description: 为文件上传生成预签名的PUT URL，不使用策略控制，客户端可直接PUT上传文件
-      parameters:
-      - description: 文件上传请求
-        in: body
-        name: files
-        required: true
-        schema:
-          $ref: '#/definitions/types.UploadFilesRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 预签名URL响应
-          schema:
-            $ref: '#/definitions/types.UploadFilesResponse'
-        "400":
-          description: 请求参数错误
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: 服务器内部错误
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: 生成预签名PUT上传URL
-      tags:
-      - 文件上传
-  /upload/urls/policy:
-    post:
-      consumes:
-      - application/json
-      description: 为文件上传生成预签名的POST URL，使用策略控制文件类型、大小等限制
-      parameters:
-      - description: 带策略的文件上传请求
-        in: body
-        name: files
-        required: true
-        schema:
-          $ref: '#/definitions/types.UploadFilesRequestPolicy'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 预签名URL和表单数据响应
-          schema:
-            $ref: '#/definitions/types.UploadFilesResponsePolicy'
-        "400":
-          description: 请求参数错误
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: 服务器内部错误
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: 生成预签名POST上传URL
-      tags:
-      - 文件上传
 swagger: "2.0"
