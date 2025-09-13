@@ -31,7 +31,6 @@ package mq
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net"
 	"strings"
@@ -134,19 +133,6 @@ var (
 	mqInst *Client
 	mqErr  error
 )
-
-// validateBasicConfig 验证 MQ 配置的基本要求.
-func validateBasicConfig(cfg *configs.MQConfig) error {
-	if cfg.Common.URL == "" && len(cfg.NATS.ClusterURLs) == 0 {
-		return errors.New("mq url or cluster_urls required")
-	}
-
-	if _, ok := factories[cfg.Type]; !ok {
-		return fmt.Errorf("unsupported mq type: %s", cfg.Type)
-	}
-
-	return nil
-}
 
 // pickProbeTarget 从配置中选择一个用于 TCP 探测的目标地址.
 func pickProbeTarget(cfg *configs.MQConfig) string {

@@ -14,10 +14,15 @@ import (
 	"github.com/yeisme/notevault/pkg/log"
 )
 
+// SearchFiles 搜索文件，基于查询，有条件的从数据库中筛选文件列表. 对象存储定期（或者通过事件）同步到数据库.
+func SearchFiles(c *gin.Context) {
+	c.JSON(http.StatusNotImplemented, gin.H{"error": "not implemented"})
+}
+
 // ListFilesThisMonth 列出用户当月的文件，并返回对象信息列表.
 //
 //	@Summary		列出用户当月的文件
-//	@Description	列出用户当月的文件，并返回对象信息列表。支持通过查询参数 year 和 month 指定年份和月份。
+//	@Description	列出用户当月的文件，并返回对象信息列表.支持通过查询参数 year 和 month 指定年份和月份.
 //	@Tags			文件查询
 //	@Accept			json
 //	@Produce		json
