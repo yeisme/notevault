@@ -38,10 +38,9 @@ func RegisterFilesRoutes(g *gin.RouterGroup) {
 
 		// ===== 文件操作路由（支持单个和批量） =====
 		// 注意：通过请求体中的ID列表来支持批量操作
-		filesRoutes.DELETE("", handle.DeleteFiles)      // 删除文件(单个/批量)
-		filesRoutes.PUT("", handle.UpdateFilesMetadata) // 更新文件元数据(单个/批量)
-		filesRoutes.POST("/copy", handle.CopyFiles)     // 复制文件(单个/批量)
-		filesRoutes.POST("/move", handle.MoveFiles)     // 移动文件(单个/批量)
+		filesRoutes.DELETE("", handle.DeleteFiles)  // 删除文件(单个/批量)
+		filesRoutes.POST("/copy", handle.CopyFiles) // 复制文件(单个/批量)
+		filesRoutes.POST("/move", handle.MoveFiles) // 移动文件(单个/批量)
 
 		// ===== 文件下载路由 =====
 		downloadGroup := filesRoutes.Group("/download")
@@ -66,14 +65,14 @@ func RegisterFilesRoutes(g *gin.RouterGroup) {
 	{
 		metaGroup := metaRoutes.Group("/:id")
 		{
-			metaGroup.GET("", handle.DefaultHandler)      // 获取元数据
-			metaGroup.POST("", handle.DefaultHandler)     // 创建/更新元数据
-			metaGroup.PUT("", handle.DefaultHandler)      // 更新元数据
-			metaGroup.DELETE("", handle.DefaultHandler)   // 删除元数据
-			metaGroup.POST("/url", handle.DefaultHandler) // 获取元数据预签名URL
+			metaGroup.GET("", handle.GetFileMeta)             // 获取元数据
+			metaGroup.POST("", handle.CreateOrUpdateFileMeta) // 创建/更新元数据
+			metaGroup.PUT("", handle.UpdateFileMeta)          // 更新元数据
+			metaGroup.DELETE("", handle.DeleteFileMeta)       // 删除元数据
+			metaGroup.POST("/url", handle.GetFileMetaURL)     // 获取元数据预签名URL
 		}
 
 		// 批量元数据操作
-		metaRoutes.POST("/batch", handle.DefaultHandler) // 批量获取元数据
+		metaRoutes.POST("/batch", handle.MetaBatch) // 批量获取元数据
 	}
 }

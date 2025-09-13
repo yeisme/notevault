@@ -40,34 +40,6 @@ func DeleteFiles(c *gin.Context) {
 	)
 }
 
-// UpdateFilesMetadata 更新文件元数据（单个/批量）。
-//
-//	@Summary		更新文件元数据(单个/批量)
-//	@Description	根据对象键与属性更新元数据，支持批量更新。
-//	@Tags			文件操作
-//	@Accept			json
-//	@Produce		json
-//	@Param			req	body		types.UpdateFilesMetadataRequest	true	"更新元数据请求"
-//	@Success		200	{object}	types.UpdateFilesMetadataResponse	"更新结果"
-//	@Failure		400	{object}	map[string]string					"请求参数错误"
-//	@Failure		500	{object}	map[string]string					"服务器内部错误"
-//	@Router			/api/v1/files [put]
-func UpdateFilesMetadata(c *gin.Context) {
-	var req types.UpdateFilesMetadataRequest
-	handleFilesOperation(c, "update metadata", &req,
-		func() error {
-			if len(req.Items) == 0 {
-				return fmt.Errorf("no items provided")
-			}
-
-			return nil
-		},
-		func(svc *service.FileService, ctx context.Context, user string) (any, error) {
-			return svc.UpdateFilesMetadata(ctx, user, &req)
-		},
-	)
-}
-
 // CopyFiles 复制文件（单个/批量）。
 //
 //	@Summary		复制文件(单个/批量)
