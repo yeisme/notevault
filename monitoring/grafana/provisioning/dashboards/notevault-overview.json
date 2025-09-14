@@ -1,0 +1,78 @@
+{
+    "id": null,
+    "title": "NoteVault Overview",
+    "tags": [
+        "notevault",
+        "overview"
+    ],
+    "timezone": "browser",
+    "panels": [
+        {
+            "id": 1,
+            "title": "Application Health",
+            "type": "stat",
+            "targets": [
+                {
+                    "expr": "up{job=\"notevault\"}",
+                    "refId": "A"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "red",
+                                "value": null
+                            },
+                            {
+                                "color": "green",
+                                "value": 1
+                            }
+                        ]
+                    }
+                }
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 0
+            }
+        },
+        {
+            "id": 2,
+            "title": "NATS Connections",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "nats_connections",
+                    "refId": "A"
+                }
+            ],
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 0
+            }
+        }
+    ],
+    "time": {
+        "from": "now-1h",
+        "to": "now"
+    },
+    "timepicker": {},
+    "templating": {
+        "list": []
+    },
+    "annotations": {
+        "list": []
+    },
+    "refresh": "5s",
+    "schemaVersion": 27,
+    "version": 0,
+    "links": []
+}

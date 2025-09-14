@@ -28,11 +28,9 @@ storage:
       path: /tmp/tempo/traces
     block:
       bloom_filter_false_positive: .05
-      index_downsample_bytes: 1000
-      encoding: zstd
     wal:
       path: /tmp/tempo/wal
-      encoding: none
 
 overrides:
+  # 使用 legacy 格式以兼容当前 Tempo 版本（2.8.x）
   max_bytes_per_trace: 5000000

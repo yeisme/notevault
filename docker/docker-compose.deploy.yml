@@ -77,7 +77,6 @@ services:
       - "4222:4222" # 客户端连接端口
       - "8222:8222" # HTTP 监控端口
       - "8223:8223" # HTTPS 监控端口
-      - "7777:7777" # Prometheus 指标端口
     volumes:
       - nats_data:/data
       - ../configs/nats.conf:/etc/nats/nats-server.conf
@@ -117,6 +116,32 @@ services:
     networks:
       - notevault-network
 
+  # Loki 日志聚合
+  loki:
+    image: grafana/loki:latest
+    container_name: notevault-loki
+    ports:
+      - "3100:3100"
+    command: ["-config.file=/etc/loki/config.yaml"]
+    volumes:
+      - ../monitoring/loki/config.yaml:/etc/loki/config.yaml
+      - loki_data:/loki
+    networks:
+      - notevault-network
+
+  # Promtail 日志采集
+  promtail:
+    image: grafana/promtail:latest
+    container_name: notevault-promtail
+    command: ["-config.file=/etc/promtail/config.yml"]
+    volumes:
+      - ../monitoring/promtail/config.yml:/etc/promtail/config.yml
+      - //var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - notevault-network
+    depends_on:
+      - loki
+
   # Tempo 分布式追踪
   tempo:
     image: grafana/tempo:latest
@@ -126,6 +151,7 @@ services:
       - "4317:4317" # OTLP gRPC 端口
       - "4318:4318" # OTLP HTTP 端口
       - "9411:9411" # Zipkin 端口
+    user: "0:0" # 以 root 运行，确保可写入挂载卷 /tmp/tempo
     volumes:
       - ../monitoring/tempo.yaml:/etc/tempo.yaml
       - tempo_data:/tmp/tempo
@@ -148,6 +174,7 @@ services:
       - notevault-network
     depends_on:
       - prometheus
+      - loki
 
 volumes:
   postgres_data:
@@ -156,6 +183,7 @@ volumes:
   prometheus_data:
   grafana_data:
   tempo_data:
+  loki_data:
 
 networks:
   notevault-network:
