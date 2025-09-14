@@ -91,6 +91,23 @@ metrics:
     version: "1.0.0"
   pprof: true
 
+# 速率限制（可选）
+rate_limit:
+  enabled: true
+  rps: 100
+  burst: 200
+  # global | ip | header:X-Forwarded-For | header:X-API-Key | header:Authorization
+  key: "ip"
+
+# 熔断器（可选）
+circuit_breaker:
+  enabled: true
+  failure_rate: 0.5
+  min_requests: 20
+  interval_seconds: 60
+  timeout_seconds: 30
+  max_requests_in_half: 5
+
 # 键值存储配置
 kv:
   type: "memory"  # 支持: memory, redis, nats, groupcache

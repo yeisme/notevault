@@ -77,6 +77,9 @@ func NewApp(configPath string) *App {
 		middleware.TracingMiddleware(),
 		middleware.PrometheusMiddleware(),
 		middleware.StorageMiddleware(manager),
+		// 限流与熔断（按配置启用）
+		middleware.RateLimitMiddleware(config.RateLimit),
+		middleware.CircuitBreakerMiddleware(config.CircuitBreaker),
 	)
 
 	var ms *http.Server

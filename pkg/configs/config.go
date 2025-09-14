@@ -60,14 +60,16 @@ const (
 type (
 	// AppConfig 全局应用程序配置.
 	AppConfig struct {
-		DB      DBConfig      `mapstructure:"db"`      // DBConfig 数据库配置
-		S3      S3Config      `mapstructure:"s3"`      // S3Config 对象存储配置
-		MQ      MQConfig      `mapstructure:"mq"`      // MQConfig 消息队列配置
-		KV      KVConfig      `mapstructure:"kv"`      // KVConfig 键值存储配置
-		Server  ServerConfig  `mapstructure:"server"`  // ServerConfig 其它服务器配置，日志级别、服务器端口等
-		Log     LogConfig     `mapstructure:"log"`     // LogConfig 日志相关配置
-		Tracing TracingConfig `mapstructure:"tracing"` // TracingConfig 分布式追踪配置
-		Metrics MetricsConfig `mapstructure:"metrics"` // MetricsConfig 监控指标配置
+		DB             DBConfig             `mapstructure:"db"`              // DBConfig 数据库配置
+		S3             S3Config             `mapstructure:"s3"`              // S3Config 对象存储配置
+		MQ             MQConfig             `mapstructure:"mq"`              // MQConfig 消息队列配置
+		KV             KVConfig             `mapstructure:"kv"`              // KVConfig 键值存储配置
+		Server         ServerConfig         `mapstructure:"server"`          // ServerConfig 其它服务器配置，日志级别、服务器端口等
+		Log            LogConfig            `mapstructure:"log"`             // LogConfig 日志相关配置
+		Tracing        TracingConfig        `mapstructure:"tracing"`         // TracingConfig 分布式追踪配置
+		Metrics        MetricsConfig        `mapstructure:"metrics"`         // MetricsConfig 监控指标配置
+		RateLimit      RateLimitConfig      `mapstructure:"rate_limit"`      // 速率限制配置（可选）
+		CircuitBreaker CircuitBreakerConfig `mapstructure:"circuit_breaker"` // 熔断器配置（可选）
 	}
 )
 
@@ -154,14 +156,16 @@ func SetReloadCallback(callback func()) {
 // setAllDefaults 设置所有配置的默认值.
 func setAllDefaults(v *viper.Viper) {
 	var (
-		serverConfig  ServerConfig
-		dbConfig      DBConfig
-		s3Config      S3Config
-		mqConfig      MQConfig
-		kvConfig      KVConfig
-		logConfig     LogConfig
-		tracingConfig TracingConfig
-		metricsConfig MetricsConfig
+		serverConfig    ServerConfig
+		dbConfig        DBConfig
+		s3Config        S3Config
+		mqConfig        MQConfig
+		kvConfig        KVConfig
+		logConfig       LogConfig
+		tracingConfig   TracingConfig
+		metricsConfig   MetricsConfig
+		rateLimitConfig RateLimitConfig
+		cbConfig        CircuitBreakerConfig
 	)
 
 	serverConfig.setDefaults(v)
@@ -172,6 +176,8 @@ func setAllDefaults(v *viper.Viper) {
 	logConfig.setDefaults(v)
 	tracingConfig.setDefaults(v)
 	metricsConfig.setDefaults(v)
+	rateLimitConfig.setDefaults(v)
+	cbConfig.setDefaults(v)
 }
 
 func reloadConfigs(v *viper.Viper, isHotReload bool, onReload func()) {
