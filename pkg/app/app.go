@@ -2,7 +2,7 @@
 package app
 
 import (
-	contextPkg "context"
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -43,7 +43,7 @@ type App struct {
 
 // NewApp 创建并返回一个新的 App 实例.
 func NewApp(configPath string) *App {
-	ctx := contextPkg.Background()
+	ctx := context.Background()
 	engine := gin.New()
 
 	// 初始化追踪
@@ -110,7 +110,7 @@ func NewApp(configPath string) *App {
 
 // Run 启动主服务器和（可选的）监控服务器.
 func (a *App) Run() error {
-	g, _ := errgroup.WithContext(contextPkg.Background())
+	g, _ := errgroup.WithContext(context.Background())
 
 	// 启动指标服务器
 	if a.metricsServer != nil {
@@ -165,7 +165,7 @@ func (a *App) Shutdown() {
 func (a *App) shutdown() {
 	// 创建关闭上下文
 	shutdownCtx, shutdownCancel :=
-		contextPkg.WithTimeout(contextPkg.Background(), DefaultShutdownTimeout)
+		context.WithTimeout(context.Background(), DefaultShutdownTimeout)
 	defer shutdownCancel()
 
 	// 优雅关闭主服务器

@@ -60,6 +60,16 @@ func RegisterFactory(t configs.MQType, f Factory) {
 	factories[t] = f
 }
 
+// GetRegisteredMQTypes 返回已注册的 MQ 类型列表.
+func GetRegisteredMQTypes() []configs.MQType {
+	types := make([]configs.MQType, 0, len(factories))
+	for t := range factories {
+		types = append(types, t)
+	}
+
+	return types
+}
+
 // Client 封装 watermill Publisher 与 Subscriber.
 type Client struct {
 	publisher  message.Publisher

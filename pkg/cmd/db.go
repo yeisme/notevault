@@ -10,20 +10,22 @@ import (
 
 var (
 	dbCmd = &cobra.Command{
-		Use:   "db",
-		Short: "Database related commands",
+		Use:     "db",
+		Short:   "Database related commands",
+		Aliases: []string{"database"},
 	}
 
 	dbListCmd = &cobra.Command{
-		Use:   "ls",
+		Use:   "list",
 		Short: "list all registered database types",
 		Run: func(cmd *cobra.Command, args []string) {
 
 			fmt.Fprintln(cmd.OutOrStdout(), "Registered database types:")
 			for _, dbType := range db.GetRegisteredDBTypes() {
-				fmt.Fprintln(cmd.OutOrStdout(), " - "+dbType)
+				fmt.Fprintln(cmd.OutOrStdout(), "   - "+dbType)
 			}
 		},
+		Aliases: []string{"ls", "l"},
 	}
 )
 

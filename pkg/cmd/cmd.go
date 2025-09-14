@@ -72,6 +72,8 @@ func Execute() error {
 	// 注册子命令
 	registerConfigsCommands()
 	registerDBCommands()
+	registerKVCommands()
+	registerMQCommands()
 
 	return rootCmd.Execute()
 }
