@@ -10,6 +10,7 @@ import (
 	"github.com/redis/go-redis/v9"
 
 	"github.com/yeisme/notevault/pkg/configs"
+	"github.com/yeisme/notevault/pkg/log"
 )
 
 const (
@@ -158,8 +159,7 @@ func (s *RedisSubscriber) Close() error {
 
 	if s.subscriber != nil {
 		if err := s.subscriber.Close(); err != nil {
-			// 记录错误但不中断关闭过程
-			// 这里可以添加日志记录
+			log.Logger().Error().Err(err).Msg("Error closing Redis subscriber")
 		}
 	}
 
