@@ -50,6 +50,9 @@ type Client struct {
 	*gorm.DB
 }
 
+// New 创建并返回一个新的数据库客户端实例.
+// 注意：为支持配置热重载，不再使用进程级单例.
+// 每次调用 New 都会根据当前配置创建新的客户端实例.
 func New(ctx context.Context) (*Client, error) {
 	cfg := configs.GetConfig().DB
 

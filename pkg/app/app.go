@@ -38,6 +38,7 @@ type App struct {
 	config        *configs.AppConfig
 	log           *zerolog.Logger
 	mg            *storage.Manager
+	done          chan struct{} // 用于通知 Run 方法退出（带缓冲，避免阻塞）
 }
 
 // NewApp 创建并返回一个新的 App 实例.
@@ -103,6 +104,7 @@ func NewApp(configPath string) *App {
 		config:        config,
 		log:           l,
 		mg:            manager,
+		done:          make(chan struct{}, 1),
 	}
 }
 
@@ -136,26 +138,34 @@ func (a *App) Run() error {
 		return nil
 	})
 
-	// 等待信号
+	// 等待信号或 done 通道
 	g.Go(func() error {
 		signalChan := make(chan os.Signal, 1)
 		signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
-		<-signalChan
-		a.shutdown()
 
-		return nil
+		select {
+		case <-a.done:
+			return nil
+		case <-signalChan:
+			a.shutdown()
+			return nil
+		}
 	})
 
 	// 等待所有 goroutine 退出
 	return g.Wait()
 }
 
+// Shutdown 优雅关闭服务器和资源（公开方法）.
+func (a *App) Shutdown() {
+	a.shutdown()
+}
+
 // shutdown 优雅关闭服务器和资源.
 func (a *App) shutdown() {
-	a.log.Info().Msg("Shutdown signal received, shutting down servers...")
-
 	// 创建关闭上下文
-	shutdownCtx, shutdownCancel := contextPkg.WithTimeout(contextPkg.Background(), DefaultShutdownTimeout)
+	shutdownCtx, shutdownCancel :=
+		contextPkg.WithTimeout(contextPkg.Background(), DefaultShutdownTimeout)
 	defer shutdownCancel()
 
 	// 优雅关闭主服务器
@@ -173,6 +183,14 @@ func (a *App) shutdown() {
 	if err := a.mg.Close(); err != nil {
 		a.log.Error().Err(err).Msg("Error closing storage manager")
 	}
+
+	// 发送完成信号
+	select {
+	case a.done <- struct{}{}:
+	default:
+	}
+
+	a.log.Info().Msg("Application shutdown complete")
 }
 
 // initMetricsServer 设置指标处理程序并返回单独的 HTTP.Server

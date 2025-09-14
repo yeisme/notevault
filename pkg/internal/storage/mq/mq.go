@@ -34,7 +34,6 @@ import (
 	"fmt"
 	"net"
 	"strings"
-	"sync"
 	"time"
 
 	watermill "github.com/ThreeDotsLabs/watermill"
@@ -128,11 +127,48 @@ func (c *Client) Close() error {
 	return err
 }
 
-var (
-	mqOnce sync.Once
-	mqInst *Client
-	mqErr  error
-)
+// New 初始化消息队列（单例）.
+// 注意：为支持配置热重载，不再使用进程级单例.
+// 每次调用 New 都会根据当前配置创建新的客户端实例.
+func New(ctx context.Context) (*Client, error) {
+	cfg := configs.GetConfig().MQ
+
+	if _, ok := factories[cfg.Type]; !ok {
+		return nil, fmt.Errorf("unsupported mq type: %s", cfg.Type)
+	}
+
+	var config any
+
+	switch cfg.Type {
+	case configs.MQTypeNATS:
+		config = &cfg
+	case configs.MQTypeRedis:
+		config = &cfg
+	default:
+		config = &cfg
+	}
+
+	if err := strictProbe(ctx, &cfg); err != nil {
+		return nil, err
+	}
+
+	logger := &zerologAdapter{l: nlog.Logger()}
+	factory := factories[cfg.Type]
+
+	pub, sub, err := factory(ctx, config, logger)
+	if err != nil {
+		return nil, fmt.Errorf("init mq (%s): %w", cfg.Type, err)
+	}
+
+	pub, sub, router, closeFunc, err := enableMetricsIfNeeded(ctx, pub, sub, logger)
+	if err != nil {
+		return nil, err
+	}
+
+	nlog.Logger().Info().Str("type", string(cfg.Type)).Bool("strict", cfg.Common.StrictConnect).Msg("MQ 管理器已初始化")
+
+	return &Client{publisher: pub, subscriber: sub, router: router, closeFunc: closeFunc}, nil
+}
 
 // pickProbeTarget 从配置中选择一个用于 TCP 探测的目标地址.
 func pickProbeTarget(cfg *configs.MQConfig) string {
@@ -212,53 +248,4 @@ func enableMetricsIfNeeded(
 	nlog.Logger().Info().Str("endpoint", metricsCfg.Common.Endpoint).Msg("MQ metrics enabled")
 
 	return decoratedPub, decoratedSub, router, closeMetricsServer, nil
-}
-
-// New 初始化消息队列（单例）.
-func New(ctx context.Context) (*Client, error) {
-	mqOnce.Do(func() {
-		cfg := configs.GetConfig().MQ
-
-		if _, ok := factories[cfg.Type]; !ok {
-			mqErr = fmt.Errorf("unsupported mq type: %s", cfg.Type)
-			return
-		}
-
-		var config any
-
-		switch cfg.Type {
-		case configs.MQTypeNATS:
-			config = &cfg
-		case configs.MQTypeRedis:
-			config = &cfg
-		default:
-			config = &cfg
-		}
-
-		if err := strictProbe(ctx, &cfg); err != nil {
-			mqErr = err
-			return
-		}
-
-		logger := &zerologAdapter{l: nlog.Logger()}
-		factory := factories[cfg.Type]
-
-		pub, sub, err := factory(ctx, config, logger)
-		if err != nil {
-			mqErr = fmt.Errorf("init mq (%s): %w", cfg.Type, err)
-			return
-		}
-
-		pub, sub, router, closeFunc, err := enableMetricsIfNeeded(ctx, pub, sub, logger)
-		if err != nil {
-			mqErr = err
-			return
-		}
-
-		mqInst = &Client{publisher: pub, subscriber: sub, router: router, closeFunc: closeFunc}
-
-		nlog.Logger().Info().Str("type", string(cfg.Type)).Bool("strict", cfg.Common.StrictConnect).Msg("MQ 管理器已初始化")
-	})
-
-	return mqInst, mqErr
 }

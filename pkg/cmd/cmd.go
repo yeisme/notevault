@@ -17,8 +17,40 @@ var (
 		Use:   "notevault",
 		Short: "A command line tool for managing notes",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			applications := app.NewApp(configPath)
-			return applications.Run()
+			restartChan := make(chan struct{}, 1)
+
+			// 设置配置重新加载回调
+			configs.SetReloadCallback(func() {
+				select {
+				case restartChan <- struct{}{}:
+				default:
+					// 如果通道已满，忽略这次重新启动信号
+				}
+			})
+
+			for {
+				applications := app.NewApp(configPath)
+
+				// 启动应用并监听重新启动信号
+				errChan := make(chan error, 1)
+				go func() {
+					errChan <- applications.Run()
+				}()
+
+				select {
+				case err := <-errChan: // 应用错误处理
+					// 应用正常退出或出错
+					if err != nil {
+						return err
+					}
+					return nil
+				case <-restartChan: // 接收重新启动信号
+					// 收到重新启动信号，停止当前应用
+					fmt.Println("Configuration changed, restarting server...")
+					applications.Shutdown()
+					// 继续循环，重新创建应用
+				}
+			}
 		},
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			// 初始化配置

@@ -76,6 +76,8 @@ var (
 	globalConfig AppConfig
 	// appViper 全局 Viper 实例.
 	appViper *viper.Viper
+	// onReloadCallback 配置重新加载时的回调函数.
+	onReloadCallback func()
 )
 
 // InitConfig 加载应用程序配置，支持多种格式(yaml、json、toml、dotenv)并启用热重载.
@@ -127,9 +129,26 @@ func InitConfig(path string) error {
 		return fmt.Errorf("failed to validate config:\n %w", err)
 	}
 
-	reloadConfigs(appViper, globalConfig.Server.ReloadConfig)
+	reloadConfigs(appViper, globalConfig.Server.ReloadConfig, nil)
 
 	return nil
+}
+
+// GetConfig 返回全局配置实例.
+func GetConfig() *AppConfig {
+	return &globalConfig
+}
+
+// GetViper 返回全局 Viper 实例.
+func GetViper() *viper.Viper {
+	return appViper
+}
+
+// SetReloadCallback 设置配置重新加载时的回调函数.
+// 该函数将在配置文件更改并成功重新加载后调用.
+// 使 onReloadCallback 可设置为 nil 以禁用回调.
+func SetReloadCallback(callback func()) {
+	onReloadCallback = callback
 }
 
 // setAllDefaults 设置所有配置的默认值.
@@ -155,10 +174,12 @@ func setAllDefaults(v *viper.Viper) {
 	metricsConfig.setDefaults(v)
 }
 
-func reloadConfigs(v *viper.Viper, isHotReload bool) {
+func reloadConfigs(v *viper.Viper, isHotReload bool, onReload func()) {
 	if !isHotReload {
 		return
 	}
+
+	onReloadCallback = onReload
 	// 启用配置热重载
 	v.OnConfigChange(func(e fsnotify.Event) {
 		fmt.Println("Config file changed:", e.Name)
@@ -178,15 +199,11 @@ func reloadConfigs(v *viper.Viper, isHotReload bool) {
 		}
 
 		fmt.Println("Configuration reloaded successfully")
+
+		// 调用重新加载回调函数
+		if onReloadCallback != nil {
+			onReloadCallback()
+		}
 	})
 	v.WatchConfig()
-}
-
-// GetConfig 返回全局配置实例.
-func GetConfig() *AppConfig {
-	return &globalConfig
-}
-
-func GetViper() *viper.Viper {
-	return appViper
 }

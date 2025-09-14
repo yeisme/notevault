@@ -1,28 +1,6 @@
 name: notevault-dev
 
 services:
-  # NoteVault 应用 (开发环境)
-  app:
-    image: golang:1.25.1-alpine3.22
-    container_name: notevault-app-dev
-    working_dir: /app
-    volumes:
-      - .:/app
-    ports:
-      - "8080:8080"
-    command: go run ./cmd/notevault
-    depends_on:
-      postgres:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
-      nats:
-        condition: service_healthy
-    networks:
-      - notevault-network
-    environment:
-      - CGO_ENABLED=0
-
   # PostgreSQL 数据库
   postgres:
     image: postgres:17-alpine
