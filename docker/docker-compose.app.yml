@@ -1,0 +1,162 @@
+name: notevault
+
+services:
+  # NoteVault 应用 (生产部署)
+  app:
+    build: ..
+    container_name: notevault-app
+    ports:
+      - "8080:8080" # 应用主端口
+      - "9091:9091" # Prometheus 指标端口
+      - "4381:4381" # 内部通信端口
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      tempo:
+        condition: service_started
+    networks:
+      - notevault-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 40s
+      retries: 3
+    restart: unless-stopped
+
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:17-alpine
+    container_name: notevault-postgres
+    environment:
+      POSTGRES_DB: notevault
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - notevault-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MinIO S3 存储
+  minio:
+    image: minio/minio:latest
+    container_name: notevault-minio
+    environment:
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - notevault-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # NATS 消息队列
+  nats:
+    image: nats:2.8.2-alpine3.15
+    container_name: notevault-nats
+    ports:
+      - "4222:4222" # 客户端连接端口
+      - "8222:8222" # HTTP 监控端口
+      - "8223:8223" # HTTPS 监控端口
+      - "7777:7777" # Prometheus 指标端口
+    volumes:
+      - nats_data:/data
+      - ../configs/nats.conf:/etc/nats/nats-server.conf
+    command: ["-c", "/etc/nats/nats-server.conf"]
+    networks:
+      - notevault-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8222/",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Prometheus 监控
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: notevault-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ../monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/etc/prometheus/console_libraries"
+      - "--web.console.templates=/etc/prometheus/consoles"
+      - "--storage.tsdb.retention.time=200h"
+      - "--web.enable-lifecycle"
+    networks:
+      - notevault-network
+
+  # Tempo 分布式追踪
+  tempo:
+    image: grafana/tempo:latest
+    container_name: notevault-tempo
+    ports:
+      - "3200:3200" # Tempo 查询端口
+      - "4317:4317" # OTLP gRPC 端口
+      - "4318:4318" # OTLP HTTP 端口
+      - "9411:9411" # Zipkin 端口
+    volumes:
+      - ../monitoring/tempo.yaml:/etc/tempo.yaml
+      - tempo_data:/tmp/tempo
+    command: ["-config.file=/etc/tempo.yaml"]
+    networks:
+      - notevault-network
+
+  # 可选：Grafana 用于可视化监控数据
+  grafana:
+    image: grafana/grafana:latest
+    container_name: notevault-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ../monitoring/grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      - notevault-network
+    depends_on:
+      - prometheus
+
+volumes:
+  postgres_data:
+  minio_data:
+  nats_data:
+  prometheus_data:
+  grafana_data:
+  tempo_data:
+
+networks:
+  notevault-network:
+    driver: bridge

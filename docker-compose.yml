@@ -1,6 +1,28 @@
-name: notevault
+name: notevault-dev
 
 services:
+  # NoteVault 应用 (开发环境)
+  app:
+    image: golang:1.25.1-alpine3.22
+    container_name: notevault-app-dev
+    working_dir: /app
+    volumes:
+      - .:/app
+    ports:
+      - "8080:8080"
+    command: go run ./cmd/notevault
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    networks:
+      - notevault-network
+    environment:
+      - CGO_ENABLED=0
+
   # PostgreSQL 数据库
   postgres:
     image: postgres:17-alpine
@@ -50,7 +72,7 @@ services:
       - "4222:4222"   # 客户端连接端口
       - "8222:8222"   # HTTP 监控端口
       - "8223:8223"   # HTTPS 监控端口
-      - "9090:9090"   # Prometheus 指标端口
+      - "7777:7777"   # Prometheus 指标端口
     volumes:
       - nats_data:/data
       - ./configs/nats.conf:/etc/nats/nats-server.conf
@@ -71,47 +93,10 @@ services:
       timeout: 10s
       retries: 3
 
-  # Prometheus 监控
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: notevault-prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
-    command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
-      - "--storage.tsdb.path=/prometheus"
-      - "--web.console.libraries=/etc/prometheus/console_libraries"
-      - "--web.console.templates=/etc/prometheus/consoles"
-      - "--storage.tsdb.retention.time=200h"
-      - "--web.enable-lifecycle"
-    networks:
-      - notevault-network
-
-  # 可选：Grafana 用于可视化监控数据
-  grafana:
-    image: grafana/grafana:latest
-    container_name: notevault-grafana
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
-    networks:
-      - notevault-network
-    depends_on:
-      - prometheus
-
 volumes:
   postgres_data:
   minio_data:
   nats_data:
-  prometheus_data:
-  grafana_data:
 
 networks:
   notevault-network:
