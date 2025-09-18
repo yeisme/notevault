@@ -26,7 +26,7 @@ func RegisterFilesRoutes(g *gin.RouterGroup) {
 
 		// ===== 文件查询相关路由 =====
 		filesRoutes.GET("/list", handle.ListFilesThisMonth) // 获取文件列表（当月）
-		filesRoutes.POST("/search", handle.DefaultHandler)  // 高级搜索（需要查询条件）
+		filesRoutes.POST("/search", handle.SearchFiles)     // 高级搜索（需要查询条件）
 
 		// ===== 文件夹管理路由 =====
 		folderGroup := filesRoutes.Group("/folder")
@@ -74,5 +74,7 @@ func RegisterFilesRoutes(g *gin.RouterGroup) {
 
 		// 批量元数据操作
 		metaRoutes.POST("/batch", handle.MetaBatch) // 批量获取元数据
+		// 同步对象存储元数据到数据库
+		metaRoutes.POST("/sync", handle.SyncFileMeta) // 同步对象存储元数据到数据库
 	}
 }

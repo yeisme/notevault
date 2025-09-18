@@ -1,4 +1,4 @@
-// Package main 启动应用程序
+// Package main 启动应用程序.
 package main
 
 import "github.com/yeisme/notevault/pkg/cmd"
@@ -11,7 +11,7 @@ import "github.com/yeisme/notevault/pkg/cmd"
 //	@license.url	https://opensource.org/license/mit/
 
 //	@contact.name	yeisme
-//	@contact.email	yefun2004@gmail.com.
+//	@contact.email	yefun2004@gmail.com
 
 func main() {
 	if err := cmd.Execute(); err != nil {

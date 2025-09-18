@@ -19,6 +19,7 @@ import (
 
 	"github.com/yeisme/notevault/pkg/api"
 	"github.com/yeisme/notevault/pkg/configs"
+	"github.com/yeisme/notevault/pkg/internal/model"
 	"github.com/yeisme/notevault/pkg/internal/storage"
 	"github.com/yeisme/notevault/pkg/log"
 	"github.com/yeisme/notevault/pkg/metrics"
@@ -63,6 +64,13 @@ func NewApp(configPath string) *App {
 	if err != nil {
 		fmt.Printf("Error initializing storage: %v\n", err)
 		// 继续运行，当存储无法使用的时候，可以继续运行，通过健康检查暴露错误
+	}
+
+	// 自动迁移数据库（仅当 DB 可用）
+	if manager != nil && manager.GetDBClient() != nil && manager.GetDBClient().GetDB() != nil {
+		if err := manager.GetDBClient().GetDB().AutoMigrate(&model.Files{}); err != nil {
+			fmt.Printf("AutoMigrate failed: %v\n", err)
+		}
 	}
 
 	l := log.Logger()

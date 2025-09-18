@@ -2,12 +2,19 @@ package handle
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/yeisme/notevault/pkg/internal/service"
 	"github.com/yeisme/notevault/pkg/internal/types"
 	"github.com/yeisme/notevault/pkg/log"
+)
+
+// 常量：日期校验上限，避免魔法数字.
+const (
+	maxMonth = 12
+	maxDay   = 31
 )
 
 // GetFileMeta 获取对象元数据（包含对象基本信息与用户元数据）。
@@ -266,4 +273,111 @@ func MetaBatch(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, types.MetaBatchResponse{Files: infos})
+}
+
+// SyncFileMeta 手动触发：将对象存储中的对象元数据同步到数据库。
+//
+//	@Summary		同步对象存储元数据到数据库
+//	@Description	扫描当前用户在对象存储中的对象，并将基础元信息落库（upsert）。
+//	@Tags			文件元数据
+//	@Produce		json
+//	@Success		200	{object}	map[string]any
+//	@Failure		400	{object}	map[string]string
+//	@Failure		500	{object}	map[string]string
+//	@Router			/api/v1/meta/sync [post]
+func SyncFileMeta(c *gin.Context) {
+	l := log.Logger()
+
+	user, err := checkUser(c)
+	if user == "" || err != nil {
+		l.Warn().Err(err).Msg("missing or invalid user")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "missing user"})
+
+		return
+	}
+
+	svc := service.NewFileService(c.Request.Context())
+
+	// 可选参数：year/month/day，用于定向同步
+	yearStr := c.Query("year")
+	monthStr := c.Query("month")
+	dayStr := c.Query("day")
+
+	// 若未提供筛选参数，则执行全量同步
+	if yearStr == "" && monthStr == "" && dayStr == "" {
+		if err := svc.SyncObjectsToDB(c.Request.Context(), user); err != nil {
+			l.Error().Err(err).Str("user", user).Msg("sync objects to db failed")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"message": "sync completed", "user": user})
+
+		return
+	}
+
+	year, month, day, verr := parseAndValidateYMD(yearStr, monthStr, dayStr)
+	if verr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": verr.Error()})
+		return
+	}
+
+	if err := svc.SyncObjectsToDBByDate(c.Request.Context(), user, year, month, day); err != nil {
+		l.Error().Err(err).Str("user", user).Int("year", year).Int("month", month).Int("day", day).Msg("sync objects(by date) to db failed")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "sync completed", "user": user, "year": year, "month": month, "day": day})
+}
+
+// parseAndValidateYMD 解析并校验 year/month/day 查询参数，避免在 handler 内过多分支。
+func parseAndValidateYMD(yearStr, monthStr, dayStr string) (int, int, int, error) {
+	parseInt := func(s string) (int, error) {
+		if s == "" {
+			return 0, nil
+		}
+
+		v, e := strconv.Atoi(s)
+		if e != nil {
+			return 0, e
+		}
+
+		return v, nil
+	}
+
+	year, errY := parseInt(yearStr)
+	if errY != nil {
+		return 0, 0, 0, errY
+	}
+
+	month, errM := parseInt(monthStr)
+	if errM != nil {
+		return 0, 0, 0, errM
+	}
+
+	day, errD := parseInt(dayStr)
+	if errD != nil {
+		return 0, 0, 0, errD
+	}
+
+	if year < 0 || month < 0 || day < 0 {
+		return 0, 0, 0, gin.Error{Err: strconv.ErrSyntax, Type: gin.ErrorTypeBind, Meta: "year/month/day must be non-negative"}
+	}
+
+	if day > 0 && (year == 0 || month == 0) {
+		return 0, 0, 0, gin.Error{Err: strconv.ErrSyntax, Type: gin.ErrorTypeBind, Meta: "day filter requires both year and month"}
+	}
+
+	if month > maxMonth {
+		return 0, 0, 0, gin.Error{Err: strconv.ErrSyntax, Type: gin.ErrorTypeBind, Meta: "month must be 1-12"}
+	}
+
+	if day > maxDay {
+		return 0, 0, 0, gin.Error{Err: strconv.ErrSyntax, Type: gin.ErrorTypeBind, Meta: "day must be 1-31"}
+	}
+
+	return year, month, day, nil
 }

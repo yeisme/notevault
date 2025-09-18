@@ -1,0 +1,16 @@
+### Search files with keyword and time range
+POST http://localhost:8080/api/v1/files/search
+Content-Type: application/json
+X-User: test-user@example.com
+
+{
+  "keyword": "report",
+  "prefix": "test-user@example.com/2025/09/",
+  "category": "docs",
+  "min_size": 0,
+  "max_size": 0,
+  "page": 1,
+  "page_size": 20,
+  "sort_by": "last_modified",
+  "sort_order": "desc"
+}
