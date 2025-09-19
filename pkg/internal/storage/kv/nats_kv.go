@@ -43,9 +43,10 @@ func NewNATSKV(ctx context.Context, config any) (KVStore, error) {
 		return nil, fmt.Errorf("failed to create JetStream context: %w", err)
 	}
 
-	// 创建或获取 KV bucket
+	// 创建或获取 KV bucket（bucket 级 TTL 如果配置层未来需要，可在这里增加）
 	kv, err := js.CreateKeyValue(&nats.KeyValueConfig{
 		Bucket: natsConfig.Bucket,
+		// TTL: natsConfig.TTL,
 	})
 	if err != nil {
 		// 如果 bucket 已存在，获取它
@@ -75,12 +76,32 @@ func (n *NATSKV) Get(ctx context.Context, key string) ([]byte, error) {
 		return nil, fmt.Errorf("failed to get key: %w", err)
 	}
 
-	return entry.Value(), nil
+	now := time.Now()
+
+	val, expired, _, derr := decodeWithTTL(entry.Value(), now)
+	if derr != nil {
+		return nil, derr
+	}
+
+	if expired {
+		// lazy delete expired entry
+		_ = n.kv.Delete(key)
+		return nil, fmt.Errorf("key not found: %s", key)
+	}
+
+	return val, nil
 }
 
 // Set 设置键的值.
-func (n *NATSKV) Set(ctx context.Context, key string, value []byte, _ time.Duration) error {
-	_, err := n.kv.Put(key, value)
+func (n *NATSKV) Set(ctx context.Context, key string, value []byte, ttl time.Duration) error {
+	encoded, wrapped, err := encodeWithTTL(value, ttl)
+	if err != nil {
+		return err
+	}
+
+	_ = wrapped // reserved for future conditional usage
+
+	_, err = n.kv.Put(key, encoded)
 	if err != nil {
 		return fmt.Errorf("failed to set key: %w", err)
 	}
@@ -100,13 +121,23 @@ func (n *NATSKV) Delete(ctx context.Context, key string) error {
 
 // Exists 检查键是否存在.
 func (n *NATSKV) Exists(ctx context.Context, key string) (bool, error) {
-	_, err := n.kv.Get(key)
+	entry, err := n.kv.Get(key)
 	if err == nats.ErrKeyNotFound {
 		return false, nil
 	}
 
 	if err != nil {
 		return false, fmt.Errorf("failed to check key existence: %w", err)
+	}
+
+	_, expired, _, derr := decodeWithTTL(entry.Value(), time.Now())
+	if derr != nil {
+		return false, derr
+	}
+
+	if expired {
+		_ = n.kv.Delete(key)
+		return false, nil
 	}
 
 	return true, nil
@@ -123,9 +154,20 @@ func (n *NATSKV) Keys(ctx context.Context, pattern string) ([]string, error) {
 	result := make([]string, 0)
 
 	for _, key := range keys {
-		if pattern == "" || key == pattern {
-			result = append(result, key)
+		if pattern != "" && key != pattern {
+			continue
 		}
+		// check ttl lazily
+		if entry, e := n.kv.Get(key); e == nil {
+			if _, expired, _, derr := decodeWithTTL(entry.Value(), time.Now()); derr == nil {
+				if expired {
+					_ = n.kv.Delete(key)
+					continue
+				}
+			}
+		}
+
+		result = append(result, key)
 	}
 
 	return result, nil

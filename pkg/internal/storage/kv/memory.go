@@ -30,18 +30,33 @@ func (m *MemoryKV) Get(ctx context.Context, key string) ([]byte, error) {
 		return nil, fmt.Errorf("invalid value type for key: %s", key)
 	}
 
+	// TTL decode + lazy expire
+	val, expired, _, err := decodeWithTTL(data, time.Now())
+	if err != nil {
+		return nil, err
+	}
+
+	if expired {
+		m.data.Delete(key)
+		return nil, fmt.Errorf("key not found: %s", key)
+	}
+
 	// 返回副本
-	result := make([]byte, len(data))
-	copy(result, data)
+	result := make([]byte, len(val))
+	copy(result, val)
 
 	return result, nil
 }
 
 // Set 设置键的值.
-func (m *MemoryKV) Set(ctx context.Context, key string, value []byte, _ time.Duration) error {
+func (m *MemoryKV) Set(ctx context.Context, key string, value []byte, ttl time.Duration) error {
+	encoded, _, err := encodeWithTTL(value, ttl)
+	if err != nil {
+		return err
+	}
 	// 复制值
-	data := make([]byte, len(value))
-	copy(data, value)
+	data := make([]byte, len(encoded))
+	copy(data, encoded)
 
 	m.data.Store(key, data)
 
@@ -56,8 +71,26 @@ func (m *MemoryKV) Delete(ctx context.Context, key string) error {
 
 // Exists 检查键是否存在.
 func (m *MemoryKV) Exists(ctx context.Context, key string) (bool, error) {
-	_, exists := m.data.Load(key)
-	return exists, nil
+	v, exists := m.data.Load(key)
+	if !exists {
+		return false, nil
+	}
+
+	b, ok := v.([]byte)
+	if !ok {
+		return false, fmt.Errorf("invalid value type for key: %s", key)
+	}
+
+	if _, expired, _, err := decodeWithTTL(b, time.Now()); err == nil {
+		if expired {
+			m.data.Delete(key)
+			return false, nil
+		}
+	} else {
+		return false, err
+	}
+
+	return true, nil
 }
 
 // Keys 获取所有键.
@@ -70,9 +103,20 @@ func (m *MemoryKV) Keys(ctx context.Context, pattern string) ([]string, error) {
 			return true // 继续遍历
 		}
 
-		if pattern == "" || k == pattern {
-			keys = append(keys, k)
+		if pattern != "" && k != pattern {
+			return true
 		}
+
+		if b, ok := value.([]byte); ok {
+			if _, expired, _, err := decodeWithTTL(b, time.Now()); err == nil {
+				if expired {
+					m.data.Delete(k)
+					return true
+				}
+			}
+		}
+
+		keys = append(keys, k)
 
 		return true
 	})

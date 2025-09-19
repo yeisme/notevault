@@ -76,21 +76,37 @@ func (g *GroupcacheKV) Get(ctx context.Context, key string) ([]byte, error) {
 		return nil, fmt.Errorf("failed to get key: %w", err)
 	}
 
+	// TTL decode + lazy expire
+	val, expired, _, derr := decodeWithTTL(data, time.Now())
+	if derr != nil {
+		return nil, derr
+	}
+
+	if expired {
+		_ = g.Delete(ctx, key)
+		return nil, fmt.Errorf("key not found: %s", key)
+	}
+
 	// 返回副本
-	result := make([]byte, len(data))
-	copy(result, data)
+	result := make([]byte, len(val))
+	copy(result, val)
 
 	return result, nil
 }
 
 // Set 设置键的值.
-func (g *GroupcacheKV) Set(ctx context.Context, key string, value []byte, _ time.Duration) error {
+func (g *GroupcacheKV) Set(ctx context.Context, key string, value []byte, ttl time.Duration) error {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
+	encoded, _, err := encodeWithTTL(value, ttl)
+	if err != nil {
+		return err
+	}
+
 	// 复制值
-	g.data[key] = make([]byte, len(value))
-	copy(g.data[key], value)
+	g.data[key] = make([]byte, len(encoded))
+	copy(g.data[key], encoded)
 
 	return nil
 }
@@ -110,9 +126,21 @@ func (g *GroupcacheKV) Exists(ctx context.Context, key string) (bool, error) {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
 
-	_, exists := g.data[key]
+	b, exists := g.data[key]
+	if !exists {
+		return false, nil
+	}
 
-	return exists, nil
+	if _, expired, _, err := decodeWithTTL(b, time.Now()); err == nil {
+		if expired {
+			// 需要删但此处拿着读锁，返回后由 Keys/Get 路径清理
+			return false, nil
+		}
+	} else {
+		return false, err
+	}
+
+	return true, nil
 }
 
 // Keys 获取所有键.
@@ -122,9 +150,20 @@ func (g *GroupcacheKV) Keys(ctx context.Context, pattern string) ([]string, erro
 
 	keys := make([]string, 0, len(g.data))
 	for key := range g.data {
-		if pattern == "" || key == pattern {
-			keys = append(keys, key)
+		if pattern != "" && key != pattern {
+			continue
 		}
+
+		if b, ok := g.data[key]; ok {
+			if _, expired, _, err := decodeWithTTL(b, time.Now()); err == nil {
+				if expired {
+					// 懒清理：不返回该键
+					continue
+				}
+			}
+		}
+
+		keys = append(keys, key)
 	}
 
 	return keys, nil

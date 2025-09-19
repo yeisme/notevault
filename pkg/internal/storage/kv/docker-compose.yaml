@@ -1,0 +1,54 @@
+name: notevault-kv-dev
+
+services:
+  redis:
+    image: redis:8.2.1-alpine
+    container_name: notevault-kv-redis
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - kv_redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - notevault-kv-net
+
+  nats:
+    image: nats:2.8.2-alpine3.15
+    container_name: notevault-kv-nats
+    # Enable JetStream (-js) and HTTP monitoring on 8222; store data at /data
+    command: ["-js", "-m", "8222", "-p", "4222", "-sd", "/data"]
+    ports:
+      - "4222:4222" # client
+      - "8222:8222" # http monitoring
+    volumes:
+      - kv_nats_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8222/",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - notevault-kv-net
+
+volumes:
+  kv_redis_data:
+  kv_nats_data:
+
+networks:
+  notevault-kv-net:
+    driver: bridge
