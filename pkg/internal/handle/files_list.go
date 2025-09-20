@@ -3,13 +3,13 @@ package handle
 import (
 	"crypto/sha1"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
 
 	ctxPkg "github.com/yeisme/notevault/pkg/context"
@@ -71,13 +71,13 @@ func SearchFiles(c *gin.Context) {
 	}
 
 	// 有 KV 客户端，尝试读缓存
-	bodyBytes, _ := json.Marshal(req)
+	bodyBytes, _ := sonic.Marshal(req)
 	h := sha1.Sum(append([]byte(user+"|/files/search|v1"), bodyBytes...))
 	cacheKey := "search:files:" + hex.EncodeToString(h[:])
 
 	if b, err := kv.Get(c.Request.Context(), cacheKey); err == nil && len(b) > 0 {
 		var cached types.SearchFilesResponse
-		if jsonErr := json.Unmarshal(b, &cached); jsonErr == nil {
+		if jsonErr := sonic.Unmarshal(b, &cached); jsonErr == nil {
 			c.JSON(http.StatusOK, cached)
 			return
 		}
@@ -94,7 +94,7 @@ func SearchFiles(c *gin.Context) {
 		return
 	}
 
-	if data, mErr := json.Marshal(res); mErr == nil {
+	if data, mErr := sonic.Marshal(res); mErr == nil {
 		_ = kv.Set(c.Request.Context(), cacheKey, data, searchCacheTTL)
 	}
 

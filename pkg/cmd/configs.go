@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 
+	"github.com/bytedance/sonic"
 	"github.com/spf13/cobra"
 
 	"github.com/yeisme/notevault/pkg/configs"
@@ -59,7 +59,7 @@ var (
 			}
 
 			// 以 JSON 格式打印当前配置
-			b, err := json.MarshalIndent(c, "", "  ")
+			b, err := sonic.MarshalIndent(c, "", "  ")
 			if err != nil {
 				fmt.Fprintln(cmd.ErrOrStderr(), "failed to marshal config to JSON:", err)
 

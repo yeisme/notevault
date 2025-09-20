@@ -11,7 +11,7 @@ import (
 	"github.com/yeisme/notevault/pkg/log"
 )
 
-// ListFileVersions 获取指定文件的版本列表。
+// ListFileVersions 获取指定文件的版本列表.
 //
 //	@Summary		获取文件版本列表
 //	@Description	根据对象键查询其版本列表（当前实现返回最新可见版本信息，后端如启用版本化可扩展）
@@ -55,7 +55,7 @@ func ListFileVersions(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// CreateFileVersion 创建新版本。
+// CreateFileVersion 创建新版本.
 //
 //	@Summary		创建文件新版本
 //	@Description	将指定对象拷贝到自身生成新版本；可选基于某版本并覆盖元数据
@@ -108,7 +108,7 @@ func CreateFileVersion(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// DeleteFileVersion 删除指定版本。
+// DeleteFileVersion 删除指定版本.
 //
 //	@Summary	删除指定文件版本
 //	@Tags		文件版本
@@ -125,7 +125,7 @@ func DeleteFileVersion(c *gin.Context) {
 	})
 }
 
-// RestoreFileVersion 恢复指定版本为最新版本。
+// RestoreFileVersion 恢复指定版本为最新版本.
 //
 //	@Summary	恢复到指定文件版本
 //	@Tags		文件版本

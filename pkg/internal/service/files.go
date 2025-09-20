@@ -96,7 +96,7 @@ func (fs *FileService) ListFilesThisMonth(ctx context.Context, user string, now 
 	return fs.ListFilesByMonth(ctx, user, y, m)
 }
 
-// SearchFiles 基于数据库进行条件查询，并返回对象展示信息。
+// SearchFiles 基于数据库进行条件查询，并返回对象展示信息.
 func (fs *FileService) SearchFiles(ctx context.Context, user string, req *types.SearchFilesRequest) (types.SearchFilesResponse, error) { //nolint:ireturn
 	if user == "" {
 		return types.SearchFilesResponse{}, fmt.Errorf("user is required")
@@ -206,7 +206,7 @@ func (fs *FileService) SearchFiles(ctx context.Context, user string, req *types.
 	return types.SearchFilesResponse{Total: int(total), Page: page, Size: size, Files: files}, nil
 }
 
-// SyncObjectsToDB 同步：扫描对象存储并将对象元数据落库（占位实现，可扩展事件驱动）。
+// SyncObjectsToDB 同步：扫描对象存储并将对象元数据落库（占位实现，可扩展事件驱动）.
 func (fs *FileService) SyncObjectsToDB(ctx context.Context, user string) error {
 	if user == "" {
 		return fmt.Errorf("user is required")
@@ -261,12 +261,12 @@ func (fs *FileService) SyncObjectsToDB(ctx context.Context, user string) error {
 	return nil
 }
 
-// SyncObjectsToDBByDate 按日期范围（年/月/日）同步对象到数据库。
+// SyncObjectsToDBByDate 按日期范围（年/月/日）同步对象到数据库.
 // 传参约定：
 //   - year>0, month==0, day==0 => 同步全年（前缀 user/YYYY/）
 //   - year>0, month>0, day==0  => 同步某月（前缀 user/YYYY/MM/）
 //   - year>0, month>0, day>0   => 同步某天（前缀 user/YYYY/MM/ 且按 LastModified.Day 过滤）
-//   - 其他组合等价于全量（前缀 user/）。
+//   - 其他组合等价于全量（前缀 user/）.
 func (fs *FileService) SyncObjectsToDBByDate(ctx context.Context, user string, year, month, day int) error {
 	if user == "" {
 		return fmt.Errorf("user is required")
@@ -351,11 +351,11 @@ func lastPathComponent(key string) string {
 	return key[idx+1:]
 }
 
-// onConflictUserKeyUpdate 生成 GORM OnConflict 子句以支持 upsert。
-// 针对唯一索引 idx_user_key(user, object_key)，更新可变字段。
+// onConflictUserKeyUpdate 生成 GORM OnConflict 子句以支持 upsert.
+// 针对唯一索引 idx_user_key(user, object_key)，更新可变字段.
 func onConflictUserKeyUpdate() clause.Expression {
-	// 仅更新"系统来源"的字段；保留 DB 中由 LLM/人工写入的富元数据（category/description/tags_json）。
-	// 对 content_type 做保护：只有当新值非空时才覆盖，避免被空串擦掉原值。
+	// 仅更新"系统来源"的字段；保留 DB 中由 LLM/人工写入的富元数据（category/description/tags_json）.
+	// 对 content_type 做保护：只有当新值非空时才覆盖，避免被空串擦掉原值.
 	return clause.OnConflict{
 		Columns: []clause.Column{{Name: "user"}, {Name: "object_key"}},
 		DoUpdates: clause.Assignments(map[string]any{

@@ -5,13 +5,13 @@ import (
 	crand "crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"slices"
 	"strings"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/oklog/ulid"
 
 	ctxPkg "github.com/yeisme/notevault/pkg/context"
@@ -23,7 +23,7 @@ import (
 	nlog "github.com/yeisme/notevault/pkg/log"
 )
 
-// 全局单例的 ULID 熵源，使用单调递增策略，确保同一毫秒内生成的 ULID 具有排序稳定性。
+// 全局单例的 ULID 熵源，使用单调递增策略，确保同一毫秒内生成的 ULID 具有排序稳定性.
 var ulidEntropy = ulid.Monotonic(crand.Reader, 0)
 
 // ShareService 负责分享相关业务（默认基于 KV 存储，可平滑切换到 DB 实现）.
@@ -277,7 +277,7 @@ func (s *ShareService) GetSharePermissions(ctx context.Context, user, shareID st
 	return &types.GetSharePermissionsResponse{ShareID: shareID, Permissions: rec.Permissions}, nil
 }
 
-// UpdateSharePermissions 仅更新分享的权限信息（仅 owner 可操作）。
+// UpdateSharePermissions 仅更新分享的权限信息（仅 owner 可操作）.
 func (s *ShareService) UpdateSharePermissions(ctx context.Context, user, shareID string, req *types.UpdateSharePermissionsRequest) error {
 	if user == "" || shareID == "" || req == nil {
 		return fmt.Errorf("user/shareID/req is required")
@@ -333,7 +333,7 @@ func (s *ShareService) AddShareUser(ctx context.Context, user, shareID, newUser 
 }
 
 // RemoveShareUser 从 shareID 的访问用户列表中移除 target（仅限 owner 操作）.
-// RemoveShareUser 将 target 从分享的访问用户列表中移除（仅 owner 可操作）。
+// RemoveShareUser 将 target 从分享的访问用户列表中移除（仅 owner 可操作）.
 func (s *ShareService) RemoveShareUser(ctx context.Context, user, shareID, target string) error {
 	if user == "" || shareID == "" || target == "" {
 		return fmt.Errorf("user/shareID/target is required")
@@ -371,7 +371,7 @@ func (s *ShareService) RemoveShareUser(ctx context.Context, user, shareID, targe
 //   - 对匹配的分享执行软删除（DeletedAt）
 //   - 清理对应 KV 缓存
 //
-// 注意：尽力而为；若 DB/KV 未初始化返回错误，但调用方通常忽略该错误以不影响主流程。
+// 注意：尽力而为；若 DB/KV 未初始化返回错误，但调用方通常忽略该错误以不影响主流程.
 func (s *ShareService) InvalidateSharesByObjectKeys(ctx context.Context, user string, objectKeys []string) error {
 	if user == "" || len(objectKeys) == 0 {
 		return fmt.Errorf("user/objectKeys is required")
@@ -440,7 +440,7 @@ const (
 	shareKeyPrefix = "shares:v1:"
 )
 
-// 缓存 TTL 策略常量：集中管理，避免魔数（mnd）。
+// 缓存 TTL 策略常量：集中管理，避免魔数（mnd）.
 const (
 	shareCacheDefaultTTL = 10 * time.Minute // 未设置过期时间时的默认缓存时长
 	shareCacheMaxTTL     = 30 * time.Minute // 单条分享缓存的最长缓存时间上限
@@ -474,10 +474,10 @@ func isExpired(now time.Time, exp *time.Time) bool {
 	return exp != nil && now.After(*exp)
 }
 
-// newShareID 生成带前缀的 ULID 字符串，形如 "sh_01H..."。
-// 使用单例熵源以支持同一毫秒内的单调递增。
+// newShareID 生成带前缀的 ULID 字符串，形如 "sh_01H...".
+// 使用单例熵源以支持同一毫秒内的单调递增.
 func newShareID(t time.Time) string {
-	// 注意：ULID 使用毫秒时间戳，因此应传入 time.Now().UTC() 或同等时间。
+	// 注意：ULID 使用毫秒时间戳，因此应传入 time.Now().UTC() 或同等时间.
 	id := ulid.MustNew(ulid.Timestamp(t), ulidEntropy)
 	return "sh_" + id.String()
 }
@@ -494,7 +494,7 @@ func hashPassword(pw string) string {
 	return base64.RawURLEncoding.EncodeToString(sum[:])
 }
 
-// kvGet 通过 key 获取并反序列化值到 v，返回是否命中。
+// kvGet 通过 key 获取并反序列化值到 v，返回是否命中.
 func (s *ShareService) kvGet(ctx context.Context, key string, v any) (bool, error) {
 	if s.kvc == nil {
 		return false, errors.New("kv client is nil")
@@ -505,20 +505,20 @@ func (s *ShareService) kvGet(ctx context.Context, key string, v any) (bool, erro
 		return false, err
 	}
 
-	if err := json.Unmarshal(b, v); err != nil {
+	if err := sonic.Unmarshal(b, v); err != nil {
 		return false, fmt.Errorf("unmarshal %s: %w", key, err)
 	}
 
 	return true, nil
 }
 
-// kvSet 序列化 v 并通过 key 存储，ttl 可选（0 表示不过期）。
+// kvSet 序列化 v 并通过 key 存储，ttl 可选（0 表示不过期）.
 func (s *ShareService) kvSet(ctx context.Context, key string, v any, ttl time.Duration) error {
 	if s.kvc == nil {
 		return errors.New("kv client is nil")
 	}
 
-	b, err := json.Marshal(v)
+	b, err := sonic.Marshal(v)
 	if err != nil {
 		return fmt.Errorf("marshal %s: %w", key, err)
 	}
@@ -526,7 +526,7 @@ func (s *ShareService) kvSet(ctx context.Context, key string, v any, ttl time.Du
 	return s.kvc.Set(ctx, key, b, ttl)
 }
 
-// kvDel 删除 key。
+// kvDel 删除 key.
 func (s *ShareService) kvDel(ctx context.Context, key string) error {
 	if s.kvc == nil {
 		return errors.New("kv client is nil")
@@ -537,7 +537,7 @@ func (s *ShareService) kvDel(ctx context.Context, key string) error {
 
 // ---- DB 为主 + 轻缓存：转换/缓存与加载 ----
 
-// fromModelRecord 将 DB 的 ShareRecord 转为 service 的 shareRecord。
+// fromModelRecord 将 DB 的 ShareRecord 转为 service 的 shareRecord.
 func fromModelRecord(mr *model.ShareRecord) *shareRecord {
 	if mr == nil {
 		return nil
@@ -608,7 +608,7 @@ func (s *ShareService) cacheShare(ctx context.Context, rec *shareRecord, ttl tim
 
 // ttlFromExpire 根据过期时间计算缓存 TTL：
 //   - 未设置过期：返回默认 TTL；
-//   - 已设置过期：返回 [0, shareCacheMaxTTL] 范围内的值，避免长时间缓存导致权限更新不生效。
+//   - 已设置过期：返回 [0, shareCacheMaxTTL] 范围内的值，避免长时间缓存导致权限更新不生效.
 func ttlFromExpire(exp *time.Time) time.Duration {
 	if exp == nil {
 		return shareCacheDefaultTTL
@@ -626,13 +626,13 @@ func ttlFromExpire(exp *time.Time) time.Duration {
 	return d
 }
 
-// updatePermissionsInDB 仅更新 Share 的权限 JSON 与更新时间，避免覆盖其他字段。
+// updatePermissionsInDB 仅更新 Share 的权限 JSON 与更新时间，避免覆盖其他字段.
 func (s *ShareService) updatePermissionsInDB(_ context.Context, shareID string, perms types.SharePermissions) error {
 	if s.dbc == nil || s.dbc.GetDB() == nil {
 		return errors.New("db not initialized")
 	}
 
-	b, err := json.Marshal(perms)
+	b, err := sonic.Marshal(perms)
 	if err != nil {
 		return err
 	}

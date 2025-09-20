@@ -3,8 +3,8 @@ package types
 
 import "time"
 
-// SearchFilesRequest 高级搜索请求（POST）。
-// 若未指定时间范围，则不限制；Page 从 1 开始。
+// SearchFilesRequest 高级搜索请求（POST）.
+// 若未指定时间范围，则不限制；Page 从 1 开始.
 type SearchFilesRequest struct {
 	// 关键字将在文件名、描述、标签值中进行 LIKE 匹配
 	Keyword string `json:"keyword,omitempty"`
@@ -28,7 +28,7 @@ type SearchFilesRequest struct {
 	SortOrder string `json:"sort_order,omitempty"` // asc|desc
 }
 
-// SearchFilesResponse 高级搜索响应。
+// SearchFilesResponse 高级搜索响应.
 type SearchFilesResponse struct {
 	Total int          `json:"total"`
 	Page  int          `json:"page"`

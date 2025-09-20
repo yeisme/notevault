@@ -2,11 +2,11 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
 
+	"github.com/bytedance/sonic"
 	"github.com/minio/minio-go/v7"
 	"gorm.io/gorm"
 
@@ -54,7 +54,7 @@ func (fs *FileService) DeleteFiles(ctx context.Context, user string, req *types.
 			results = append(results, result)
 			success++
 
-			// 同步到数据库：软删除对应元数据（若存在）。
+			// 同步到数据库：软删除对应元数据（若存在）.
 			_ = fs.dbSoftDeleteFile(ctx, user, objectKey)
 
 			// 记录待失效分享的对象键
@@ -108,7 +108,7 @@ func (fs *FileService) UpdateFilesMetadata(ctx context.Context, user string,
 			continue
 		}
 
-		// S3 更新成功即算本项成功；DB 同步尽力而为，不影响成功统计。
+		// S3 更新成功即算本项成功；DB 同步尽力而为，不影响成功统计.
 		r.Success = true
 		results = append(results, r)
 		success++
@@ -270,12 +270,12 @@ func (fs *FileService) MoveFiles(ctx context.Context, user string, req *types.Mo
 	}, nil
 }
 
-// userOwnsKey 校验对象键是否归属于用户命名空间。
+// userOwnsKey 校验对象键是否归属于用户命名空间.
 func (fs *FileService) userOwnsKey(user, key string) bool {
 	return strings.HasPrefix(key, user+"/")
 }
 
-// s3UpdateMetadata 通过拷贝覆盖的方式更新对象的元数据。
+// s3UpdateMetadata 通过拷贝覆盖的方式更新对象的元数据.
 func (fs *FileService) s3UpdateMetadata(ctx context.Context, bucket string, item types.UpdateFileMetadataItem) error {
 	copyOpts := minio.CopyDestOptions{
 		Bucket:          bucket,
@@ -304,7 +304,7 @@ func (fs *FileService) s3UpdateMetadata(ctx context.Context, bucket string, item
 	return err
 }
 
-// dbUpsertMetadata 将用户传入的元数据写入数据库（仅覆盖显式提供的字段）。
+// dbUpsertMetadata 将用户传入的元数据写入数据库（仅覆盖显式提供的字段）.
 func (fs *FileService) dbUpsertMetadata(ctx context.Context, user, bucket string, item types.UpdateFileMetadataItem) error {
 	dbx := fs.dbClient.GetDB().WithContext(ctx)
 
@@ -332,7 +332,7 @@ func (fs *FileService) dbUpsertMetadata(ctx context.Context, user, bucket string
 		}
 
 		if len(item.Tags) > 0 {
-			if b, mErr := json.Marshal(item.Tags); mErr == nil {
+			if b, mErr := sonic.Marshal(item.Tags); mErr == nil {
 				rec.TagsJSON = string(b)
 			}
 		}
@@ -359,7 +359,7 @@ func (fs *FileService) dbUpsertMetadata(ctx context.Context, user, bucket string
 	}
 
 	if len(item.Tags) > 0 {
-		if b, mErr := json.Marshal(item.Tags); mErr == nil {
+		if b, mErr := sonic.Marshal(item.Tags); mErr == nil {
 			updates["tags_json"] = string(b)
 		}
 	}
@@ -373,7 +373,7 @@ func (fs *FileService) dbUpsertMetadata(ctx context.Context, user, bucket string
 		Updates(updates).Error
 }
 
-// dbSoftDeleteFile 软删除数据库中的文件记录（若存在）。
+// dbSoftDeleteFile 软删除数据库中的文件记录（若存在）.
 func (fs *FileService) dbSoftDeleteFile(ctx context.Context, user, objectKey string) error {
 	dbx := fs.dbClient.GetDB().WithContext(ctx)
 	return dbx.Where("user = ? AND object_key = ?", user, objectKey).Delete(&model.Files{}).Error
