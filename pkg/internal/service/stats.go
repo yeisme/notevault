@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"gorm.io/gorm"
-
 	"github.com/yeisme/notevault/pkg/internal/model"
 	"github.com/yeisme/notevault/pkg/internal/types"
 )
@@ -250,6 +248,60 @@ func (s *StatsService) UploadsDaily(ctx context.Context, user string, days int) 
 	return s.FilesTrend(ctx, user, days)
 }
 
+// UploadsRange 按给定的 UTC 日期范围（闭区间，精确到天）统计每日上传数量与大小。
+// start 和 end 仅取日期部分；若 start > end 则返回空。
+func (s *StatsService) UploadsRange(ctx context.Context, user string, start, end time.Time) ([]types.StatsTrendPoint, error) { //nolint:ireturn
+	if user == "" {
+		return nil, fmt.Errorf("user required")
+	}
+
+	// 归一化为 UTC 零点，确保以日为粒度
+	start = time.Date(start.Year(), start.Month(), start.Day(), 0, 0, 0, 0, time.UTC)
+
+	end = time.Date(end.Year(), end.Month(), end.Day(), 0, 0, 0, 0, time.UTC)
+	if end.Before(start) {
+		return []types.StatsTrendPoint{}, nil
+	}
+
+	dbx := s.dbClient.GetDB().WithContext(ctx)
+
+	rows := []struct {
+		D   string
+		Cnt int64
+		Sum int64
+	}{}
+
+	// 与 FilesTrend 一致：DATE(last_modified) 聚合，兼容 SQLite/MySQL
+	if err := dbx.Model(&model.Files{}).
+		Select("DATE(last_modified) as d, COUNT(*) as cnt, COALESCE(SUM(size),0) as sum").
+		Where("user = ? AND last_modified >= ? AND last_modified < ?", user, start, end.AddDate(0, 0, 1)).
+		Group("DATE(last_modified)").
+		Order("d").
+		Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+
+	// 建立索引以便补齐
+	m := make(map[string]struct{ C, S int64 }, len(rows))
+	for _, r := range rows {
+		m[r.D] = struct{ C, S int64 }{r.Cnt, r.Sum}
+	}
+
+	// 生成每天的数据（包含空天）
+	var out []types.StatsTrendPoint
+
+	for d := start; !d.After(end); d = d.AddDate(0, 0, 1) {
+		key := d.Format("2006-01-02")
+		if v, ok := m[key]; ok {
+			out = append(out, types.StatsTrendPoint{Date: key, Count: int(v.C), Size: v.S})
+		} else {
+			out = append(out, types.StatsTrendPoint{Date: key})
+		}
+	}
+
+	return out, nil
+}
+
 // UploadsByUser 留出扩展：当系统支持多用户聚合时可实现（目前仅统计当前 user）。
 func (s *StatsService) UploadsByUser(ctx context.Context, user string) ([]types.StatsTypeItem, error) {
 	if user == "" {
@@ -273,17 +325,6 @@ func (s *StatsService) UploadsByUser(ctx context.Context, user string) ([]types.
 	}
 
 	return out, nil
-}
-
-// SystemPerformance/SystemErrors/SystemUsage 暂以空实现返回 501，便于前端联调。
-func (s *StatsService) SystemPerformance(_ context.Context) (any, error) {
-	return nil, gorm.ErrNotImplemented
-}
-func (s *StatsService) SystemErrors(_ context.Context) (any, error) {
-	return nil, gorm.ErrNotImplemented
-}
-func (s *StatsService) SystemUsage(_ context.Context) (any, error) {
-	return nil, gorm.ErrNotImplemented
 }
 
 // Dashboard/Report 基础占位。

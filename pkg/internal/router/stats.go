@@ -35,22 +35,13 @@ func RegisterStatsRoutes(g *gin.RouterGroup) {
 		uploadStatsGroup := statsRoutes.Group("/uploads")
 
 		{
-			uploadStatsGroup.GET("", handle.UploadsStats)       // 上传历史统计
-			uploadStatsGroup.GET("/daily", handle.UploadsStats) // 每日上传统计
-			uploadStatsGroup.GET("/user", handle.UploadsStats)  // 按用户统计（当前用户）
-		}
-
-		// ===== 系统统计路由 =====
-		systemStatsGroup := statsRoutes.Group("/system")
-
-		{
-			systemStatsGroup.GET("/performance", handle.DefaultHandler) // 系统性能统计
-			systemStatsGroup.GET("/errors", handle.DefaultHandler)      // 错误统计
-			systemStatsGroup.GET("/usage", handle.DefaultHandler)       // 系统使用统计
+			uploadStatsGroup.GET("", handle.UploadsStats)            // 上传历史统计
+			uploadStatsGroup.GET("/daily", handle.UploadsDailyStats) // 每日上传统计
+			uploadStatsGroup.GET("/user", handle.UploadsByUser)      // 按用户统计（当前用户）
 		}
 
 		// ===== 综合统计路由 =====
-		statsRoutes.GET("/dashboard", handle.GetFilesStats) // 统计仪表板数据（复用文件统计）
-		statsRoutes.GET("/report", handle.GetFilesStats)    // 生成统计报告（占位）
+		statsRoutes.GET("/dashboard", handle.DashboardStats) // 统计仪表板数据
+		statsRoutes.GET("/report", handle.ReportStats)       // 生成统计报告
 	}
 }
