@@ -1,0 +1,136 @@
+# NoteVault 应用程序配置 - Kafka + MariaDB 环境
+
+server:
+  port: 8080
+  host: "0.0.0.0"
+  log_level: "info"
+  reload_config: true
+  debug: false
+  timeout: 30
+  read_timeout: 10
+  write_timeout: 10
+
+# 数据库配置（MariaDB）
+db:
+  type: "mariadb"
+  host: "mariadb"
+  port: 3306
+  user: "notevault"
+  password: "notevault"
+  database: "notevault"
+  sslmode: "disable"
+  max_open_conns: 10
+  max_idle_conns: 5
+  enable_metrics: true
+
+# S3 存储配置（沿用 MinIO）
+s3:
+  endpoint: "minio:9000"
+  access_key_id: "minioadmin"
+  secret_access_key: "minioadmin"
+  use_ssl: false
+  bucket_name:
+    - "notevault"
+  region: "us-east-1"
+
+# 消息队列配置（Kafka - 目前应用未内置工厂，请按注释切换到 nats 或 redis）
+# 注意：当前代码库的 MQ 工厂仅注册了 NATS 和 Redis。
+# 如果需要使用 Kafka，需要增加 Kafka 工厂（例如 watermill-kafka），否则请先选择 nats 或 redis。
+# 这里提供 kafka 的占位配置，便于后续接入。
+#
+# mq:
+#   type: "kafka"              # 需要新增支持
+#   kafka:
+#     brokers: ["kafka:9092"]
+#     client_id: "notevault-app"
+#     consumer_group: "notevault-group"
+#     # 更多参数：acks、retries、sasl、tls 等
+
+# 先按当前实现使用 nats（或 redis）
+mq:
+  type: "redis"   # 当前实现支持 redis/nats；Kafka 需后续接入
+  common:
+    url: "kafka:9092"
+    user: ""
+    password: ""
+    cluster_id: "notevault-cluster"
+    client_id: "notevault-app"
+    max_reconnects: 5
+    reconnect_wait: 5
+    enable_metrics: true
+    endpoint: ":9092"
+  nats:
+    jetstream_enabled: true
+    stream_name: "notevault-stream"
+    subject_prefix: "notevault."
+    jetstream_auto_provision: true
+    jetstream_track_msg_id: true
+    jetstream_ack_async: true
+    jetstream_durable_prefix: "notevault-durable"
+    stream_max_msgs: 1000000
+    stream_max_bytes: 1073741824
+    stream_max_age: 24
+    stream_storage_type: "file"
+    stream_replicas: 1
+    consumer_ack_wait: 30
+    consumer_max_deliver: 3
+    consumer_max_ack_pending: 1000
+    jwt: ""
+    nkey: ""
+    cluster_urls: []
+    load_balance: true
+  redis:
+    addr: "redis:6379"
+    password: ""
+    db: 0
+
+log:
+  enable_file: true
+  file_path: "logs/notevault.log"
+  max_size_mb: 100
+  max_backups: 7
+  max_age_days: 28
+  compress: true
+  level: "info"
+
+tracing:
+  enabled: true
+  service_name: "notevault"
+  service_version: "1.0.0"
+  exporter_type: "otlp-http"
+  endpoint: "http://tempo:4318"
+  sample_rate: 1.0
+  batch_timeout: "5s"
+  max_batch_size: 512
+  max_queue_size: 2048
+
+metrics:
+  enabled: true
+  service_name: "notevault"
+  service_version: "1.0.0"
+  exporter_type: "prometheus"
+  endpoint: ":9091"
+  collect_interval: "15s"
+  runtime_metrics: true
+  custom_metrics: []
+  labels:
+    service: "notevault"
+    version: "1.0.0"
+  pprof: true
+
+kv:
+  type: "redis"  # 可选：memory, redis, nats, groupcache
+  redis:
+    addr: "redis:6379"
+    password: ""
+    db: 0
+  # nats:
+  #   url: "nats:4222"
+  #   user: ""
+  #   password: ""
+  #   bucket: "notevault-kv"
+  # groupcache:
+  #   name: "notevault-cache"
+  #   cache_bytes: 536870912
+  #   peers: []
+  #   self: "http://app:8080"

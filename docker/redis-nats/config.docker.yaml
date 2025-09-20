@@ -93,11 +93,11 @@ metrics:
 
 # 键值存储配置
 kv:
-  type: "memory" # 支持: memory, redis, nats, groupcache
-  # redis:
-  #   addr: "redis:6379"
-  #   password: ""
-  #   db: 0
+  type: "redis" # 支持: memory, redis, nats, groupcache
+  redis:
+    addr: "redis:6379"
+    password: ""
+    db: 0
   # nats:
   #   url: "nats:4222"
   #   user: ""

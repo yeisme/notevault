@@ -26,9 +26,6 @@ WORKDIR /root/
 # Copy the binary from builder stage
 COPY --from=builder /app/notevault .
 
-# Copy Docker-specific config
-COPY --from=builder /app/configs/config.docker.yaml ./configs/config.yaml
-
 # Create logs directory and set permissions
 RUN mkdir -p logs && \
     chown -R appuser:appgroup /root/
@@ -38,17 +35,13 @@ USER appuser
 
 # Expose ports
 # 8080: Application port
-# 9090: Prometheus metrics port
-# 9091: Pprof port
-# 4381: Internal communication port
+# 9091: Pprof port And Prometheus metrics port
 EXPOSE 8080
-EXPOSE 9090
 EXPOSE 9091
-EXPOSE 4381
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8080/health || exit 1
 
-# Command to run
-CMD ["./notevault"]
+# Use ENTRYPOINT so runtime can pass flags, e.g. `-c /config/config.yaml`
+ENTRYPOINT ["./notevault"]
