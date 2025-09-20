@@ -1,0 +1,10 @@
+@base=http://localhost:8080
+
+### DB 健康检查
+GET {{base}}/health/db
+
+### S3 健康检查
+GET {{base}}/health/s3
+
+### MQ 健康检查
+GET {{base}}/health/mq

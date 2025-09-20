@@ -1,0 +1,17 @@
+@base=http://localhost:8080/api/v1/shares
+@user=test-user@example.com
+@shareId=REPLACE_WITH_SHARE_ID
+
+### 获取分享详情
+GET {{base}}/{{shareId}}
+
+### 访问分享（无密码或正确密码）
+POST {{base}}/{{shareId}}/access
+Content-Type: application/json
+
+{
+  "password": ""
+}
+
+### 下载分享（返回直链或重定向信息）
+GET {{base}}/{{shareId}}/download

@@ -1,0 +1,18 @@
+@base=http://localhost:8080/api/v1/stats/files
+@user=test-user@example.com
+
+### 文件统计汇总
+GET {{base}}
+X-User: {{user}}
+
+### 文件类型统计
+GET {{base}}/type
+X-User: {{user}}
+
+### 文件大小分布
+GET {{base}}/size
+X-User: {{user}}
+
+### 文件数量趋势 (最近N日)
+GET {{base}}/trend
+X-User: {{user}}

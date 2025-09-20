@@ -1,0 +1,14 @@
+@base=http://localhost:8080/api/v1/stats/storage
+@user=test-user@example.com
+
+### 存储统计汇总
+GET {{base}}
+X-User: {{user}}
+
+### 按存储桶统计
+GET {{base}}/bucket
+X-User: {{user}}
+
+### 存储使用趋势 (复用文件趋势)
+GET {{base}}/trend
+X-User: {{user}}

@@ -1,0 +1,31 @@
+@base=http://localhost:8080/api/v1/shares
+@user=test-user@example.com
+
+### 创建分享（无密码，不限期，允许下载）
+POST {{base}}
+Content-Type: application/json
+X-User: {{user}}
+
+{
+  "object_keys": [
+    "test-user@example.com/2025/09/sample1.txt",
+    "test-user@example.com/2025/09/sample2.jpg"
+  ],
+  "password": "",
+  "expire_days": 0,
+  "allow_download": true
+}
+
+### 创建分享（有密码，7天有效）
+POST {{base}}
+Content-Type: application/json
+X-User: {{user}}
+
+{
+  "object_keys": [
+    "test-user@example.com/2025/09/sample3.pdf"
+  ],
+  "password": "123456",
+  "expire_days": 7,
+  "allow_download": false
+}

@@ -1,0 +1,26 @@
+@base=http://localhost:8080/api/v1/stats/uploads
+@user=test-user@example.com
+
+### 上传统计 - 最近N日 (默认)
+GET {{base}}
+X-User: {{user}}
+
+### 上传统计 - 指定年 (2024年)
+GET {{base}}?year=2024
+X-User: {{user}}
+
+### 上传统计 - 指定年月 (2024-09)
+GET {{base}}?year=2024&month=9
+X-User: {{user}}
+
+### 上传统计 - 指定年月日 (2024-09-20)
+GET {{base}}?year=2024&month=9&day=20
+X-User: {{user}}
+
+### 每日上传统计 - 最近N日 (/daily)
+GET {{base}}/daily
+X-User: {{user}}
+
+### 按用户统计（当前用户） (/user)
+GET {{base}}/user
+X-User: {{user}}

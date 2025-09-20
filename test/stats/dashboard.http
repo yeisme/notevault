@@ -1,0 +1,10 @@
+@base=http://localhost:8080/api/v1/stats
+@user=test-user@example.com
+
+### 统计仪表板
+GET {{base}}/dashboard
+X-User: {{user}}
+
+### 统计报告
+GET {{base}}/report
+X-User: {{user}}

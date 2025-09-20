@@ -1,0 +1,33 @@
+@base=http://localhost:8080/api/v1/shares
+@user=test-user@example.com
+@shareId=REPLACE_WITH_SHARE_ID
+
+### 获取分享权限
+GET {{base}}/{{shareId}}/permissions
+X-User: {{user}}
+
+### 更新分享权限（允许匿名访问，白名单两位用户）
+PUT {{base}}/{{shareId}}/permissions
+Content-Type: application/json
+X-User: {{user}}
+
+{
+  "allow_anonymous": true,
+  "users": [
+    "friend1@example.com",
+    "friend2@example.com"
+  ]
+}
+
+### 添加分享用户
+POST {{base}}/{{shareId}}/permissions/users
+Content-Type: application/json
+X-User: {{user}}
+
+{
+  "user_id": "newuser@example.com"
+}
+
+### 移除分享用户
+DELETE {{base}}/{{shareId}}/permissions/users/newuser@example.com
+X-User: {{user}}
