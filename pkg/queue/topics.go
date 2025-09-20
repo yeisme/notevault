@@ -9,7 +9,7 @@ package queue
 
 const (
 	// 对象存储领域.
-	TopicObjectStored      = "nv.object.stored"       // 已写入对象存储（包含版本号、基础元数据）
+	TopicObjectStored      = "nv.object.stored"       // 已写入对象存储（包含版本号、基础元数据） 只有在元数据同步到数据库后，才会触发后续处理流程
 	TopicObjectUpdated     = "nv.object.updated"      // 对象存储内容更新（新版本创建）
 	TopicObjectDeleted     = "nv.object.deleted"      // 对象从存储中删除（包含被删除的版本信息）
 	TopicObjectVersioned   = "nv.object.versioned"    // 对象产生新版本（用于版本控制跟踪）

@@ -17,6 +17,7 @@ import (
 	"github.com/yeisme/notevault/pkg/internal/storage/s3"
 	"github.com/yeisme/notevault/pkg/internal/types"
 	nlog "github.com/yeisme/notevault/pkg/log"
+	"github.com/yeisme/notevault/pkg/queue"
 )
 
 // FileService 负责文件相关业务逻辑（存储、元数据处理等），不处理 HTTP 细节.
@@ -206,7 +207,7 @@ func (fs *FileService) SearchFiles(ctx context.Context, user string, req *types.
 	return types.SearchFilesResponse{Total: int(total), Page: page, Size: size, Files: files}, nil
 }
 
-// SyncObjectsToDB 同步：扫描对象存储并将对象元数据落库（占位实现，可扩展事件驱动）.
+// SyncObjectsToDB 同步：扫描对象存储并将对象元数据落库.
 func (fs *FileService) SyncObjectsToDB(ctx context.Context, user string) error {
 	if user == "" {
 		return fmt.Errorf("user is required")
@@ -255,6 +256,19 @@ func (fs *FileService) SyncObjectsToDB(ctx context.Context, user string) error {
 		if err := dbx.Clauses(onConflictUserKeyUpdate()).Create(&rec).Error; err != nil {
 			nlog.Logger().Warn().Err(err).Str("key", obj.Key).Msg("upsert file failed")
 			// 不中断整体同步
+		} else {
+			// 元数据成功落库后，发布对象已存储事件（nv.object.stored）
+			fs.publishObjectStored(
+				ctx,
+				bucket,
+				obj.Key,
+				obj.VersionID,
+				strings.Trim(obj.ETag, "\""),
+				obj.Size,
+				rec.ContentType,
+				rec.FileName,
+				"sync",
+			)
 		}
 	}
 
@@ -331,6 +345,19 @@ func (fs *FileService) SyncObjectsToDBByDate(ctx context.Context, user string, y
 
 		if err := dbx.Clauses(onConflictUserKeyUpdate()).Create(&rec).Error; err != nil {
 			nlog.Logger().Warn().Err(err).Str("key", obj.Key).Msg("upsert file failed")
+		} else {
+			// 元数据成功落库后，发布对象已存储事件（nv.object.stored）
+			fs.publishObjectStored(
+				ctx,
+				bucket,
+				obj.Key,
+				obj.VersionID,
+				strings.Trim(obj.ETag, "\""),
+				obj.Size,
+				rec.ContentType,
+				rec.FileName,
+				"notevault-sync",
+			)
 		}
 	}
 
@@ -374,5 +401,37 @@ func onConflictUserKeyUpdate() clause.Expression {
 			"last_modified": gorm.Expr("EXCLUDED.last_modified"),
 			"updated_at":    gorm.Expr("EXCLUDED.updated_at"),
 		}),
+	}
+}
+
+// publishObjectStored 发布 nv.object.stored 事件，供同步流程在 upsert 成功后调用。
+// 注意：发布失败仅记录告警，不影响主流程。
+func (fs *FileService) publishObjectStored(
+	ctx context.Context,
+	bucket, objectKey, versionID, etag string,
+	size int64,
+	contentType, fileName, source string,
+) {
+	payload := queue.ObjectStoredPayload{
+		Object: queue.ObjectRef{
+			Bucket:      bucket,
+			ObjectKey:   objectKey,
+			VersionID:   versionID,
+			ETag:        etag,
+			Size:        size,
+			ContentType: contentType,
+		},
+		Source:   source,
+		FileName: fileName,
+	}
+
+	msg, mErr := queue.NewWatermillMessage(queue.TopicObjectStored, payload)
+	if mErr != nil {
+		nlog.Logger().Warn().Err(mErr).Str("key", objectKey).Msg("build object stored message failed")
+		return
+	}
+
+	if pErr := fs.mqClient.Publish(ctx, queue.TopicObjectStored, msg); pErr != nil {
+		nlog.Logger().Warn().Err(pErr).Str("key", objectKey).Msg("publish object stored message failed")
 	}
 }
