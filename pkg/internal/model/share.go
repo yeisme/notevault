@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"gorm.io/gorm"
 
-	"github.com/bytedance/sonic"
 	itypes "github.com/yeisme/notevault/pkg/internal/types"
 )
 

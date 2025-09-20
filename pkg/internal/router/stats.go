@@ -14,31 +14,35 @@ func RegisterStatsRoutes(g *gin.RouterGroup) {
 	{
 		// ===== 文件统计路由 =====
 		fileStatsGroup := statsRoutes.Group("/files")
+
 		{
-			fileStatsGroup.GET("", handle.DefaultHandler)       // 文件总数统计
-			fileStatsGroup.GET("/type", handle.DefaultHandler)  // 按类型统计
-			fileStatsGroup.GET("/size", handle.DefaultHandler)  // 文件大小统计
-			fileStatsGroup.GET("/trend", handle.DefaultHandler) // 文件数量趋势
+			fileStatsGroup.GET("", handle.GetFilesStats)            // 文件总数统计
+			fileStatsGroup.GET("/type", handle.GetFilesStatsByType) // 按类型统计
+			fileStatsGroup.GET("/size", handle.GetFilesStatsBySize) // 文件大小统计
+			fileStatsGroup.GET("/trend", handle.GetFilesTrend)      // 文件数量趋势
 		}
 
 		// ===== 存储统计路由 =====
 		storageStatsGroup := statsRoutes.Group("/storage")
+
 		{
-			storageStatsGroup.GET("", handle.DefaultHandler)        // 存储使用情况
-			storageStatsGroup.GET("/bucket", handle.DefaultHandler) // 按存储桶统计
-			storageStatsGroup.GET("/trend", handle.DefaultHandler)  // 存储使用趋势
+			storageStatsGroup.GET("", handle.StorageStats)           // 存储使用情况
+			storageStatsGroup.GET("/bucket", handle.StorageByBucket) // 按存储桶统计
+			storageStatsGroup.GET("/trend", handle.GetFilesTrend)    // 存储使用趋势（复用文件趋势）
 		}
 
 		// ===== 上传统计路由 =====
 		uploadStatsGroup := statsRoutes.Group("/uploads")
+
 		{
-			uploadStatsGroup.GET("", handle.DefaultHandler)       // 上传历史统计
-			uploadStatsGroup.GET("/daily", handle.DefaultHandler) // 每日上传统计
-			uploadStatsGroup.GET("/user", handle.DefaultHandler)  // 按用户统计
+			uploadStatsGroup.GET("", handle.UploadsStats)       // 上传历史统计
+			uploadStatsGroup.GET("/daily", handle.UploadsStats) // 每日上传统计
+			uploadStatsGroup.GET("/user", handle.UploadsStats)  // 按用户统计（当前用户）
 		}
 
 		// ===== 系统统计路由 =====
 		systemStatsGroup := statsRoutes.Group("/system")
+
 		{
 			systemStatsGroup.GET("/performance", handle.DefaultHandler) // 系统性能统计
 			systemStatsGroup.GET("/errors", handle.DefaultHandler)      // 错误统计
@@ -46,7 +50,7 @@ func RegisterStatsRoutes(g *gin.RouterGroup) {
 		}
 
 		// ===== 综合统计路由 =====
-		statsRoutes.GET("/dashboard", handle.DefaultHandler) // 统计仪表板数据
-		statsRoutes.GET("/report", handle.DefaultHandler)    // 生成统计报告
+		statsRoutes.GET("/dashboard", handle.GetFilesStats) // 统计仪表板数据（复用文件统计）
+		statsRoutes.GET("/report", handle.GetFilesStats)    // 生成统计报告（占位）
 	}
 }

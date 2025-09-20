@@ -17,6 +17,7 @@ require (
 	github.com/minio/minio-go/v7 v7.0.95
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/nats-io/nats.go v1.45.0
+	github.com/oklog/ulid v1.3.1
 	github.com/prometheus/client_golang v1.23.0
 	github.com/redis/go-redis/v9 v9.13.0
 	github.com/rs/zerolog v1.34.0
@@ -108,7 +109,6 @@ require (
 	github.com/nats-io/nkeys v0.4.11 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/ncruces/go-strftime v0.1.9 // indirect
-	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/openzipkin/zipkin-go v0.4.3 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/philhofer/fwd v1.2.0 // indirect

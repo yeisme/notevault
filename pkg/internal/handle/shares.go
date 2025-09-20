@@ -11,6 +11,17 @@ import (
 )
 
 // CreateShare 创建分享链接.
+//
+//	@Summary		创建分享
+//	@Description	为指定对象键创建分享链接，可选过期与密码
+//	@Tags			分享
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	types.CreateShareRequest	true	"创建参数"
+//	@Success		200		{object}					types.CreateShareResponse
+//	@Failure		400		{object}					map[string]string
+//	@Failure		500		{object}					map[string]string
+//	@Router			/api/v1/shares [post]
 func CreateShare(c *gin.Context) {
 	l := log.Logger()
 
@@ -44,6 +55,14 @@ func CreateShare(c *gin.Context) {
 }
 
 // ListShares 获取我的分享列表.
+//
+//	@Summary	分享列表
+//	@Tags		分享
+//	@Produce	json
+//	@Success	200	{object}	types.ListSharesResponse
+//	@Failure	400	{object}	map[string]string
+//	@Failure	500	{object}	map[string]string
+//	@Router		/api/v1/shares [get]
 func ListShares(c *gin.Context) {
 	l := log.Logger()
 
@@ -69,6 +88,14 @@ func ListShares(c *gin.Context) {
 }
 
 // DeleteShare 删除分享.
+//
+//	@Summary	删除分享
+//	@Tags		分享
+//	@Param		shareId	path	string	true	"分享ID"
+//	@Success	204
+//	@Failure	400	{object}	map[string]string
+//	@Failure	500	{object}	map[string]string
+//	@Router		/api/v1/shares/{shareId} [delete]
 func DeleteShare(c *gin.Context) {
 	l := log.Logger()
 
@@ -98,6 +125,15 @@ func DeleteShare(c *gin.Context) {
 }
 
 // GetShareDetail 获取分享详情.
+//
+//	@Summary	分享详情
+//	@Tags		分享
+//	@Produce	json
+//	@Param		shareId	path		string	true	"分享ID"
+//	@Success	200		{object}	types.ShareInfo
+//	@Failure	400		{object}	map[string]string
+//	@Failure	500		{object}	map[string]string
+//	@Router		/api/v1/shares/{shareId} [get]
 func GetShareDetail(c *gin.Context) {
 	l := log.Logger()
 
@@ -121,6 +157,17 @@ func GetShareDetail(c *gin.Context) {
 }
 
 // AccessShare 访问分享内容（可选密码）.
+//
+//	@Summary	访问分享
+//	@Tags		分享
+//	@Accept		json
+//	@Produce	json
+//	@Param		shareId	path						string	true	"分享ID"
+//	@Param		body	types.AccessShareRequest	true	"访问参数（可含密码）"
+//	@Success	200		{object}					types.ShareInfo
+//	@Failure	400		{object}					map[string]string
+//	@Failure	500		{object}					map[string]string
+//	@Router		/api/v1/shares/{shareId}/access [post]
 func AccessShare(c *gin.Context) {
 	l := log.Logger()
 
@@ -152,6 +199,15 @@ func AccessShare(c *gin.Context) {
 }
 
 // DownloadShare 下载分享文件（返回直链或重定向）.
+//
+//	@Summary	下载分享
+//	@Tags		分享
+//	@Produce	json
+//	@Param		shareId	path		string				true	"分享ID"
+//	@Success	200		{object}	map[string]string	"{\"download_url\":\"...\"}"
+//	@Failure	400		{object}	map[string]string
+//	@Failure	500		{object}	map[string]string
+//	@Router		/api/v1/shares/{shareId}/download [get]
 func DownloadShare(c *gin.Context) {
 	l := log.Logger()
 
@@ -175,6 +231,15 @@ func DownloadShare(c *gin.Context) {
 }
 
 // GetSharePermissions 获取分享权限.
+//
+//	@Summary	获取分享权限
+//	@Tags		分享
+//	@Produce	json
+//	@Param		shareId	path		string	true	"分享ID"
+//	@Success	200		{object}	types.GetSharePermissionsResponse
+//	@Failure	400		{object}	map[string]string
+//	@Failure	500		{object}	map[string]string
+//	@Router		/api/v1/shares/{shareId}/permissions [get]
 func GetSharePermissions(c *gin.Context) {
 	l := log.Logger()
 
@@ -206,6 +271,16 @@ func GetSharePermissions(c *gin.Context) {
 }
 
 // UpdateSharePermissions 更新分享权限.
+//
+//	@Summary	更新分享权限
+//	@Tags		分享
+//	@Accept		json
+//	@Param		shareId	path								string	true	"分享ID"
+//	@Param		body	types.UpdateSharePermissionsRequest	true	"权限参数"
+//	@Success	204
+//	@Failure	400	{object}	map[string]string
+//	@Failure	500	{object}	map[string]string
+//	@Router		/api/v1/shares/{shareId}/permissions [put]
 func UpdateSharePermissions(c *gin.Context) {
 	l := log.Logger()
 
@@ -243,6 +318,16 @@ func UpdateSharePermissions(c *gin.Context) {
 }
 
 // AddShareUser 添加分享用户.
+//
+//	@Summary	添加分享用户
+//	@Tags		分享
+//	@Accept		json
+//	@Param		shareId	path						string	true	"分享ID"
+//	@Param		body	types.AddShareUserRequest	true	"用户参数"
+//	@Success	204
+//	@Failure	400	{object}	map[string]string
+//	@Failure	500	{object}	map[string]string
+//	@Router		/api/v1/shares/{shareId}/permissions/users [post]
 func AddShareUser(c *gin.Context) {
 	l := log.Logger()
 
@@ -284,6 +369,15 @@ func AddShareUser(c *gin.Context) {
 }
 
 // RemoveShareUser 移除分享用户.
+//
+//	@Summary	移除分享用户
+//	@Tags		分享
+//	@Param		shareId	path	string	true	"分享ID"
+//	@Param		userId	path	string	true	"用户ID"
+//	@Success	204
+//	@Failure	400	{object}	map[string]string
+//	@Failure	500	{object}	map[string]string
+//	@Router		/api/v1/shares/{shareId}/permissions/users/{userId} [delete]
 func RemoveShareUser(c *gin.Context) {
 	l := log.Logger()
 

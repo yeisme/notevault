@@ -11,6 +11,16 @@ import (
 )
 
 // ListTrash 获取回收站列表.
+//
+//	@Summary	回收站列表
+//	@Tags		回收站
+//	@Produce	json
+//	@Param		page	query		int	false	"页码(默认1)"
+//	@Param		size	query		int	false	"每页条数(默认50, 最大200)"
+//	@Success	200		{object}	types.TrashListResponse
+//	@Failure	400		{object}	map[string]string
+//	@Failure	500		{object}	map[string]string
+//	@Router		/api/v1/trash [get]
 func ListTrash(c *gin.Context) {
 	l := log.Logger()
 
@@ -45,6 +55,14 @@ func ListTrash(c *gin.Context) {
 }
 
 // RestoreTrash 单个恢复.
+//
+//	@Summary	恢复回收站文件
+//	@Tags		回收站
+//	@Param		id	path		string	true	"对象键"
+//	@Success	200	{object}	types.TrashActionResponse
+//	@Failure	400	{object}	map[string]string
+//	@Failure	500	{object}	map[string]string
+//	@Router		/api/v1/trash/{id}/restore [post]
 func RestoreTrash(c *gin.Context) {
 	singleKeyAction(c, "missing id", func(svc *service.TrashService, user string, keys []string) (int, error) {
 		return svc.Restore(c.Request.Context(), user, keys)
@@ -52,6 +70,14 @@ func RestoreTrash(c *gin.Context) {
 }
 
 // DeleteTrash 永久删除单个.
+//
+//	@Summary	永久删除回收站文件
+//	@Tags		回收站
+//	@Param		id	path		string	true	"对象键"
+//	@Success	200	{object}	types.TrashActionResponse
+//	@Failure	400	{object}	map[string]string
+//	@Failure	500	{object}	map[string]string
+//	@Router		/api/v1/trash/{id} [delete]
 func DeleteTrash(c *gin.Context) {
 	singleKeyAction(c, "missing id", func(svc *service.TrashService, user string, keys []string) (int, error) {
 		return svc.DeletePermanently(c.Request.Context(), user, keys)
@@ -59,6 +85,16 @@ func DeleteTrash(c *gin.Context) {
 }
 
 // RestoreTrashBatch 批量恢复.
+//
+//	@Summary	批量恢复回收站文件
+//	@Tags		回收站
+//	@Accept		json
+//	@Produce	json
+//	@Param		body	types.TrashBatchRequest	true	"对象键列表"
+//	@Success	200		{object}				types.TrashActionResponse
+//	@Failure	400		{object}				map[string]string
+//	@Failure	500		{object}				map[string]string
+//	@Router		/api/v1/trash/batch/restore [post]
 func RestoreTrashBatch(c *gin.Context) {
 	batchAction(c, func(svc *service.TrashService, user string, keys []string) (int, error) {
 		return svc.Restore(c.Request.Context(), user, keys)
@@ -66,6 +102,16 @@ func RestoreTrashBatch(c *gin.Context) {
 }
 
 // DeleteTrashBatch 批量永久删除.
+//
+//	@Summary	批量永久删除回收站文件
+//	@Tags		回收站
+//	@Accept		json
+//	@Produce	json
+//	@Param		body	types.TrashBatchRequest	true	"对象键列表"
+//	@Success	200		{object}				types.TrashActionResponse
+//	@Failure	400		{object}				map[string]string
+//	@Failure	500		{object}				map[string]string
+//	@Router		/api/v1/trash/batch [delete]
 func DeleteTrashBatch(c *gin.Context) {
 	batchAction(c, func(svc *service.TrashService, user string, keys []string) (int, error) {
 		return svc.DeletePermanently(c.Request.Context(), user, keys)
@@ -73,6 +119,13 @@ func DeleteTrashBatch(c *gin.Context) {
 }
 
 // EmptyTrash 清空回收站.
+//
+//	@Summary	清空回收站
+//	@Tags		回收站
+//	@Success	200	{object}	types.TrashActionResponse
+//	@Failure	400	{object}	map[string]string
+//	@Failure	500	{object}	map[string]string
+//	@Router		/api/v1/trash [delete]
 func EmptyTrash(c *gin.Context) {
 	l := log.Logger()
 
@@ -96,6 +149,16 @@ func EmptyTrash(c *gin.Context) {
 }
 
 // AutoCleanTrash 自动清理过期回收站记录.
+//
+//	@Summary	自动清理回收站
+//	@Tags		回收站
+//	@Accept		json
+//	@Produce	json
+//	@Param		body	types.TrashAutoCleanRequest	false	"清理条件"
+//	@Success	200		{object}					types.TrashActionResponse
+//	@Failure	400		{object}					map[string]string
+//	@Failure	500		{object}					map[string]string
+//	@Router		/api/v1/trash/auto-clean [post]
 func AutoCleanTrash(c *gin.Context) {
 	l := log.Logger()
 
