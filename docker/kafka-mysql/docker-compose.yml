@@ -1,0 +1,235 @@
+name: notevault-kafka-mysql
+
+services:
+  # NoteVault 应用（Kafka + MariaDB 部署）
+  app:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    container_name: notevault-app-kafka
+    ports:
+      - "8080:8080" # 应用主端口
+      - "9091:9091" # Prometheus 指标端口
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      tempo:
+        condition: service_started
+      minio:
+        condition: service_healthy
+    networks:
+      - notevault-network
+    volumes:
+      - ./config.docker.yaml:/config/config.yaml:ro
+      - app_logs:/root/logs
+    command: ["-c", "/config/config.yaml"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 40s
+      retries: 3
+    restart: unless-stopped
+
+  # Redis 缓存（用于 KV 存储）
+  redis:
+    image: redis:8.2.1-alpine
+    container_name: notevault-redis-kafka
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - notevault-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # MariaDB 数据库
+  mariadb:
+    image: mariadb:11.4
+    container_name: notevault-mariadb
+    environment:
+      MARIADB_DATABASE: notevault
+      MARIADB_USER: notevault
+      MARIADB_PASSWORD: notevault
+      MARIADB_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    networks:
+      - notevault-network
+    healthcheck:
+      test:
+        ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -proot --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # Zookeeper-less Kafka (KRaft 模式)
+  kafka:
+    image: bitnami/kafka:3.6
+    container_name: notevault-kafka
+    ports:
+      - "9092:9092" # 外部客户端
+      - "9094:9094" # 控制器或内网（可选）
+    environment:
+      - KAFKA_CFG_NODE_ID=1
+      - KAFKA_CFG_PROCESS_ROLES=broker,controller
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9094
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka:9094
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+      - KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR=1
+      - KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    volumes:
+      - kafka_data:/bitnami/kafka
+    networks:
+      - notevault-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/opt/bitnami/kafka/bin/kafka-metadata-quorum.sh",
+          "--bootstrap-server",
+          "localhost:9092",
+          "--describe",
+        ]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+    restart: unless-stopped
+
+  # MinIO S3 存储
+  minio:
+    image: minio/minio:latest
+    container_name: notevault-minio-kafka
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - notevault-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    restart: unless-stopped
+
+  # Prometheus 监控
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: notevault-prometheus-kafka
+    ports:
+      - "9090:9090"
+    volumes:
+      - ../../monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/etc/prometheus/console_libraries"
+      - "--web.console.templates=/etc/prometheus/consoles"
+      - "--storage.tsdb.retention.time=200h"
+      - "--web.enable-lifecycle"
+    networks:
+      - notevault-network
+    restart: unless-stopped
+
+  # Loki 日志聚合
+  loki:
+    image: grafana/loki:latest
+    container_name: notevault-loki-kafka
+    ports:
+      - "3100:3100"
+    command: ["-config.file=/etc/loki/config.yaml"]
+    volumes:
+      - ../../monitoring/loki/config.yaml:/etc/loki/config.yaml
+      - loki_data:/loki
+    networks:
+      - notevault-network
+    restart: unless-stopped
+
+  # Promtail 日志采集
+  promtail:
+    image: grafana/promtail:latest
+    container_name: notevault-promtail-kafka
+    command: ["-config.file=/etc/promtail/config.yml"]
+    volumes:
+      - ../../monitoring/promtail/config.yml:/etc/promtail/config.yml
+      - //var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - notevault-network
+    depends_on:
+      - loki
+    restart: unless-stopped
+
+  # Tempo 分布式追踪
+  tempo:
+    image: grafana/tempo:latest
+    container_name: notevault-tempo-kafka
+    ports:
+      - "3200:3200"
+      - "4317:4317"
+      - "4318:4318"
+      - "9411:9411"
+    user: "0:0"
+    volumes:
+      - ../../monitoring/tempo.yaml:/etc/tempo.yaml
+      - tempo_data:/tmp/tempo
+    command: ["-config.file=/etc/tempo.yaml"]
+    networks:
+      - notevault-network
+    restart: unless-stopped
+
+  # 可选：Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: notevault-grafana-kafka
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ../../monitoring/grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      - notevault-network
+    depends_on:
+      - prometheus
+      - loki
+    restart: unless-stopped
+
+volumes:
+  mariadb_data:
+  kafka_data:
+  minio_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:
+  tempo_data:
+  loki_data:
+  app_logs:
+
+networks:
+  notevault-network:
+    driver: bridge

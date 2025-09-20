@@ -3,29 +3,56 @@ name: notevault
 services:
   # NoteVault 应用 (生产部署)
   app:
-    build: ..
+    build:
+      context: ../..
+      dockerfile: Dockerfile
     container_name: notevault-app
     ports:
       - "8080:8080" # 应用主端口
       - "9091:9091" # Prometheus 指标端口
-      - "4381:4381" # 内部通信端口
     depends_on:
       postgres:
         condition: service_healthy
-      minio:
-        condition: service_healthy
       nats:
+        condition: service_healthy
+      redis:
         condition: service_healthy
       tempo:
         condition: service_started
+      minio:
+        condition: service_healthy
     networks:
       - notevault-network
+    volumes:
+      # 只读挂载部署配置，容器内路径自定义
+      - ./config.docker.yaml:/config/config.yaml:ro
+      # 可选：将应用日志写入本地/持久卷
+      - app_logs:/root/logs
+    command: ["-c", "/config/config.yaml"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
       start_period: 40s
       retries: 3
+    restart: unless-stopped
+
+  # Redis 缓存
+  redis:
+    image: redis:8.2.1-alpine
+    container_name: notevault-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - notevault-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
 
   # PostgreSQL 数据库
@@ -47,14 +74,15 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   # MinIO S3 存储
   minio:
     image: minio/minio:latest
     container_name: notevault-minio
     environment:
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -68,6 +96,7 @@ services:
       interval: 30s
       timeout: 20s
       retries: 3
+    restart: unless-stopped
 
   # NATS 消息队列
   nats:
@@ -79,7 +108,7 @@ services:
       - "8223:8223" # HTTPS 监控端口
     volumes:
       - nats_data:/data
-      - ../configs/nats.conf:/etc/nats/nats-server.conf
+      - ../../configs/nats.conf:/etc/nats/nats-server.conf
     command: ["-c", "/etc/nats/nats-server.conf"]
     networks:
       - notevault-network
@@ -96,6 +125,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    restart: unless-stopped
 
   # Prometheus 监控
   prometheus:
@@ -104,7 +134,7 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ../monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ../../monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
@@ -115,6 +145,7 @@ services:
       - "--web.enable-lifecycle"
     networks:
       - notevault-network
+    restart: unless-stopped
 
   # Loki 日志聚合
   loki:
@@ -124,10 +155,11 @@ services:
       - "3100:3100"
     command: ["-config.file=/etc/loki/config.yaml"]
     volumes:
-      - ../monitoring/loki/config.yaml:/etc/loki/config.yaml
+      - ../../monitoring/loki/config.yaml:/etc/loki/config.yaml
       - loki_data:/loki
     networks:
       - notevault-network
+    restart: unless-stopped
 
   # Promtail 日志采集
   promtail:
@@ -135,12 +167,13 @@ services:
     container_name: notevault-promtail
     command: ["-config.file=/etc/promtail/config.yml"]
     volumes:
-      - ../monitoring/promtail/config.yml:/etc/promtail/config.yml
+      - ../../monitoring/promtail/config.yml:/etc/promtail/config.yml
       - //var/run/docker.sock:/var/run/docker.sock
     networks:
       - notevault-network
     depends_on:
       - loki
+    restart: unless-stopped
 
   # Tempo 分布式追踪
   tempo:
@@ -153,11 +186,12 @@ services:
       - "9411:9411" # Zipkin 端口
     user: "0:0" # 以 root 运行，确保可写入挂载卷 /tmp/tempo
     volumes:
-      - ../monitoring/tempo.yaml:/etc/tempo.yaml
+      - ../../monitoring/tempo.yaml:/etc/tempo.yaml
       - tempo_data:/tmp/tempo
     command: ["-config.file=/etc/tempo.yaml"]
     networks:
       - notevault-network
+    restart: unless-stopped
 
   # 可选：Grafana 用于可视化监控数据
   grafana:
@@ -169,12 +203,13 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
       - grafana_data:/var/lib/grafana
-      - ../monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ../../monitoring/grafana/provisioning:/etc/grafana/provisioning
     networks:
       - notevault-network
     depends_on:
       - prometheus
       - loki
+    restart: unless-stopped
 
 volumes:
   postgres_data:
@@ -184,6 +219,8 @@ volumes:
   grafana_data:
   tempo_data:
   loki_data:
+  app_logs:
+  redis_data:
 
 networks:
   notevault-network:

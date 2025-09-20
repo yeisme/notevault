@@ -90,8 +90,18 @@ var (
 
 // setupFlags 设置命令行标志并绑定到 viper.
 func setupFlags() {
+	// Prefer env vars for default config path when provided
+	defaultCfg := os.Getenv("NOTEVAULT_CONFIG")
+	if defaultCfg == "" {
+		defaultCfg = os.Getenv("NOTEVAULT_CONFIG_PATH")
+	}
+
+	if defaultCfg == "" {
+		defaultCfg = "."
+	}
+
 	rootCmd.PersistentFlags().StringVarP(
-		&configPath, "config", "c", ".", "config file (default discovered in current directory or ./configs)")
+		&configPath, "config", "c", defaultCfg, "config file or directory (can be set via NOTEVAULT_CONFIG or NOTEVAULT_CONFIG_PATH)")
 
 	// ServerConfig 相关标志
 	rootCmd.PersistentFlags().IntVarP(&port, "port", "p", configs.DefaultPort, "server port")
