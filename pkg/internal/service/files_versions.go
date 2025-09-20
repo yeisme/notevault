@@ -131,7 +131,7 @@ func (fs *FileService) ListFileVersions(ctx context.Context, user, objectKey, sc
 	return &types.ListFileVersionsResponse{FileID: objectKey, Versions: versions, Total: len(versions)}, nil
 }
 
-// CreateFileVersion 基于现有对象创建一个新版本（通过拷贝到自身来触发新版本）。
+// CreateFileVersion 基于现有对象创建一个新版本（通过拷贝到自身来触发新版本）.
 func (fs *FileService) CreateFileVersion(ctx context.Context, user string, req *types.CreateFileVersionRequest) (*types.CreateFileVersionResponse, error) {
 	if user == "" || !strings.HasPrefix(req.ObjectKey, user+"/") {
 		return nil, fmt.Errorf("access denied: object does not belong to user")
@@ -171,7 +171,7 @@ func (fs *FileService) CreateFileVersion(ctx context.Context, user string, req *
 	}, nil
 }
 
-// DeleteFileVersion 删除指定版本。
+// DeleteFileVersion 删除指定版本.
 func (fs *FileService) DeleteFileVersion(ctx context.Context, user, objectKey, versionID string) (*types.DeleteFileVersionResponse, error) {
 	if user == "" || !strings.HasPrefix(objectKey, user+"/") {
 		return nil, fmt.Errorf("access denied: object does not belong to user")
@@ -190,7 +190,7 @@ func (fs *FileService) DeleteFileVersion(ctx context.Context, user, objectKey, v
 	return &types.DeleteFileVersionResponse{ObjectKey: objectKey, VersionID: versionID, Success: true}, nil
 }
 
-// RestoreFileVersion 基于指定版本恢复为最新版本（复制该版本到同一 key）。
+// RestoreFileVersion 基于指定版本恢复为最新版本（复制该版本到同一 key）.
 func (fs *FileService) RestoreFileVersion(ctx context.Context, user, objectKey, versionID string) (*types.RestoreFileVersionResponse, error) {
 	if user == "" || !strings.HasPrefix(objectKey, user+"/") {
 		return nil, fmt.Errorf("access denied: object does not belong to user")

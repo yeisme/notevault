@@ -1,17 +1,17 @@
 package model
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
 	"gorm.io/gorm"
 
+	"github.com/bytedance/sonic"
 	itypes "github.com/yeisme/notevault/pkg/internal/types"
 )
 
-// Share 数据库模型：以 DB 为真源，部分字段以 JSON 文本存储以保持实现简单。
-// 注意：后续如需复杂查询/统计，可拆为 share_objects / share_users 关联表。
+// Share 数据库模型：以 DB 为真源，部分字段以 JSON 文本存储以保持实现简单.
+// 注意：后续如需复杂查询/统计，可拆为 share_objects / share_users 关联表.
 type Share struct {
 	ShareID         string         `gorm:"primaryKey;size:64" json:"share_id"`
 	Owner           string         `gorm:"size:255;index"     json:"owner"`
@@ -25,8 +25,8 @@ type Share struct {
 	DeletedAt       gorm.DeletedAt `gorm:"index"              json:"-"`
 }
 
-// ShareRecord 供 service 层使用的内部结构（与 service/shares.go 中保持一致）。
-// 这里重复定义一个轻量结构，避免 service 直接依赖 model 的 JSON 细节。
+// ShareRecord 供 service 层使用的内部结构（与 service/shares.go 中保持一致）.
+// 这里重复定义一个轻量结构，避免 service 直接依赖 model 的 JSON 细节.
 type ShareRecord struct {
 	ShareID       string
 	Owner         string
@@ -38,18 +38,18 @@ type ShareRecord struct {
 	Permissions   itypes.SharePermissions
 }
 
-// ToRecord 将 DB 模型反序列化为 ShareRecord。
+// ToRecord 将 DB 模型反序列化为 ShareRecord.
 func (s *Share) ToRecord() (*ShareRecord, error) {
 	var keys []string
 	if s.ObjectKeysJSON != "" {
-		if err := json.Unmarshal([]byte(s.ObjectKeysJSON), &keys); err != nil {
+		if err := sonic.Unmarshal([]byte(s.ObjectKeysJSON), &keys); err != nil {
 			return nil, fmt.Errorf("unmarshal object_keys: %w", err)
 		}
 	}
 
 	var perms itypes.SharePermissions
 	if s.PermissionsJSON != "" {
-		if err := json.Unmarshal([]byte(s.PermissionsJSON), &perms); err != nil {
+		if err := sonic.Unmarshal([]byte(s.PermissionsJSON), &perms); err != nil {
 			return nil, fmt.Errorf("unmarshal permissions: %w", err)
 		}
 	}
@@ -66,14 +66,14 @@ func (s *Share) ToRecord() (*ShareRecord, error) {
 	}, nil
 }
 
-// FromRecord 将 ShareRecord 序列化为 DB 模型。
+// FromRecord 将 ShareRecord 序列化为 DB 模型.
 func FromRecord(r *ShareRecord) (*Share, error) {
-	objBytes, err := json.Marshal(r.ObjectKeys)
+	objBytes, err := sonic.Marshal(r.ObjectKeys)
 	if err != nil {
 		return nil, fmt.Errorf("marshal object_keys: %w", err)
 	}
 
-	permBytes, err := json.Marshal(r.Permissions)
+	permBytes, err := sonic.Marshal(r.Permissions)
 	if err != nil {
 		return nil, fmt.Errorf("marshal permissions: %w", err)
 	}

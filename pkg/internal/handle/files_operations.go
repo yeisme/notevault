@@ -12,10 +12,10 @@ import (
 	"github.com/yeisme/notevault/pkg/log"
 )
 
-// DeleteFiles 删除文件（单个/批量）。
+// DeleteFiles 删除文件（单个/批量）.
 //
 //	@Summary		删除文件(单个/批量)
-//	@Description	根据对象键列表删除文件，支持批量删除。
+//	@Description	根据对象键列表删除文件，支持批量删除.
 //	@Tags			文件操作
 //	@Accept			json
 //	@Produce		json
@@ -40,10 +40,10 @@ func DeleteFiles(c *gin.Context) {
 	)
 }
 
-// CopyFiles 复制文件（单个/批量）。
+// CopyFiles 复制文件（单个/批量）.
 //
 //	@Summary		复制文件(单个/批量)
-//	@Description	将源对象复制到目标对象，支持批量复制。
+//	@Description	将源对象复制到目标对象，支持批量复制.
 //	@Tags			文件操作
 //	@Accept			json
 //	@Produce		json
@@ -68,10 +68,10 @@ func CopyFiles(c *gin.Context) {
 	)
 }
 
-// MoveFiles 移动文件（单个/批量）。
+// MoveFiles 移动文件（单个/批量）.
 //
 //	@Summary		移动文件(单个/批量)
-//	@Description	将源对象移动到目标对象，支持批量移动。
+//	@Description	将源对象移动到目标对象，支持批量移动.
 //	@Tags			文件操作
 //	@Accept			json
 //	@Produce		json
@@ -96,7 +96,7 @@ func MoveFiles(c *gin.Context) {
 	)
 }
 
-// handleFilesOperation 封装公共流程：绑定/校验/用户校验/调用 service/统一返回。
+// handleFilesOperation 封装公共流程：绑定/校验/用户校验/调用 service/统一返回.
 func handleFilesOperation(c *gin.Context, operation string, req any,
 	validate func() error,
 	serviceCall func(*service.FileService, context.Context, string) (any, error),

@@ -2,12 +2,12 @@ package handle
 
 import (
 	"context"
-	"encoding/json"
 	"io"
 	"net/http"
 	"strconv"
 	"strings"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
 
 	"github.com/yeisme/notevault/pkg/internal/service"
@@ -252,7 +252,7 @@ func parseTagsFromString(tagsStr string) map[string]string {
 
 	// 尝试解析 JSON 格式
 	if strings.HasPrefix(strings.TrimSpace(tagsStr), "{") {
-		if err := json.Unmarshal([]byte(tagsStr), &tags); err == nil {
+		if err := sonic.Unmarshal([]byte(tagsStr), &tags); err == nil {
 			return tags
 		}
 	}
@@ -315,7 +315,7 @@ func UploadBatchFiles(c *gin.Context) {
 	metadataMap := make(map[string]*types.UploadFileMetadata)
 	if metadataStr := c.PostForm("metadata"); metadataStr != "" {
 		var metadataList []types.UploadFileMetadata
-		if unmarshalErr := json.Unmarshal([]byte(metadataStr), &metadataList); unmarshalErr == nil {
+		if unmarshalErr := sonic.Unmarshal([]byte(metadataStr), &metadataList); unmarshalErr == nil {
 			for i := range metadataList {
 				if i < len(files) {
 					metadataMap[files[i].Filename] = &metadataList[i]

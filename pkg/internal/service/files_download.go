@@ -35,7 +35,7 @@ func (fs *FileService) PresignedGetURLs(ctx context.Context, req *types.GetFiles
 	return &types.GetFilesURLResponse{Results: results}, nil
 }
 
-// StatObject 查询对象信息（包含大小、类型、ETag、最后修改时间等）。
+// StatObject 查询对象信息（包含大小、类型、ETag、最后修改时间等）.
 func (fs *FileService) StatObject(ctx context.Context, user, objectKey string) (*types.ObjectInfo, error) {
 	if user == "" || !strings.HasPrefix(objectKey, user+"/") {
 		return nil, fmt.Errorf("access denied: object does not belong to user")
@@ -66,7 +66,7 @@ func (fs *FileService) StatObject(ctx context.Context, user, objectKey string) (
 	return obj, nil
 }
 
-// OpenObject 打开对象获取可读流与其信息。
+// OpenObject 打开对象获取可读流与其信息.
 func (fs *FileService) OpenObject(ctx context.Context, user, objectKey string) (*minio.Object, *types.ObjectInfo, error) { //nolint:ireturn
 	if user == "" || !strings.HasPrefix(objectKey, user+"/") {
 		return nil, nil, fmt.Errorf("access denied: object does not belong to user")

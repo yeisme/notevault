@@ -62,10 +62,10 @@ func GetDownloadURL(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// DownloadFiles 直传下载（单文件或批量打包）。
+// DownloadFiles 直传下载（单文件或批量打包）.
 //
 //	@Summary		下载文件（直传/打包）
-//	@Description	当对象数量为1且未指定archive时，直接返回文件流；否则按zip打包返回，同时会在响应头附带部分元信息。
+//	@Description	当对象数量为1且未指定archive时，直接返回文件流；否则按zip打包返回，同时会在响应头附带部分元信息.
 //	@Tags			文件下载
 //	@Accept			json
 //	@Produce		application/octet-stream
@@ -121,7 +121,7 @@ func escapeRFC5987(s string) string {
 	return replacer.Replace(s)
 }
 
-// serveSingleFile 直接返回单个文件流。
+// serveSingleFile 直接返回单个文件流.
 func serveSingleFile(c *gin.Context, svc *service.FileService,
 	user string, item types.DownloadObjectItem) error {
 	obj, info, err := svc.OpenObject(c.Request.Context(), user, item.ObjectKey)
@@ -165,7 +165,7 @@ func serveSingleFile(c *gin.Context, svc *service.FileService,
 	return copyErr
 }
 
-// serveZip 将多个对象打包为 ZIP 并流式返回。
+// serveZip 将多个对象打包为 ZIP 并流式返回.
 func serveZip(c *gin.Context, svc *service.FileService,
 	user string, items []types.DownloadObjectItem, archiveName string) error { //nolint:ireturn
 	c.Header("Content-Type", "application/zip")
@@ -213,7 +213,7 @@ func serveZip(c *gin.Context, svc *service.FileService,
 	return nil
 }
 
-// resolveFileName 解析下载文件名。
+// resolveFileName 解析下载文件名.
 func resolveFileName(given, key string) string {
 	if given != "" {
 		return strings.TrimPrefix(given, "/")
@@ -227,7 +227,7 @@ func resolveFileName(given, key string) string {
 	return base
 }
 
-// determineContentType 根据已知信息推断 Content-Type。
+// determineContentType 根据已知信息推断 Content-Type.
 func determineContentType(fileName, headerType string) string {
 	if headerType != "" {
 		return headerType
@@ -242,7 +242,7 @@ func determineContentType(fileName, headerType string) string {
 	return "application/octet-stream"
 }
 
-// suggestArchiveName 基于第一个文件名或对象键生成打包文件名。
+// suggestArchiveName 基于第一个文件名或对象键生成打包文件名.
 func suggestArchiveName(items []types.DownloadObjectItem) string {
 	if len(items) == 1 {
 		base := resolveFileName(items[0].FileName, items[0].ObjectKey)
@@ -277,7 +277,7 @@ func suggestArchiveName(items []types.DownloadObjectItem) string {
 	return prefix
 }
 
-// commonPrefix 计算字符串切片的公共前缀（按字符）。
+// commonPrefix 计算字符串切片的公共前缀（按字符）.
 func commonPrefix(ss []string) string {
 	if len(ss) == 0 {
 		return ""

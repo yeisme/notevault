@@ -14,7 +14,7 @@ type CreateShareRequest struct {
 	AllowDownload bool `form:"allow_download" json:"allow_download"`
 }
 
-// ShareInfo 分享的公开信息。
+// ShareInfo 分享的公开信息.
 type ShareInfo struct {
 	// ShareID 分享唯一标识（URL 公开使用）
 	ShareID string `json:"share_id"`
@@ -30,25 +30,25 @@ type ShareInfo struct {
 	AllowDownload bool `json:"allow_download"`
 }
 
-// CreateShareResponse 创建分享的响应体。
+// CreateShareResponse 创建分享的响应体.
 type CreateShareResponse struct {
 	// Share 创建成功的分享信息
 	Share ShareInfo `json:"share"`
 }
 
-// ListSharesResponse 分享列表响应体。
+// ListSharesResponse 分享列表响应体.
 type ListSharesResponse struct {
 	// Shares 当前用户的分享列表（已过滤过期项）
 	Shares []ShareInfo `json:"shares"`
 }
 
-// AccessShareRequest 访问分享请求（用于校验可选密码）。
+// AccessShareRequest 访问分享请求（用于校验可选密码）.
 type AccessShareRequest struct {
 	// Password 访问密码（若分享设置了密码）
 	Password string `form:"password" json:"password"`
 }
 
-// SharePermissions 分享权限配置。
+// SharePermissions 分享权限配置.
 type SharePermissions struct {
 	// AllowAnonymous 是否允许匿名访问（设了密码则仍需校验密码）
 	AllowAnonymous bool `json:"allow_anonymous"`
@@ -56,7 +56,7 @@ type SharePermissions struct {
 	Users []string `json:"users"`
 }
 
-// GetSharePermissionsResponse 获取分享权限响应体。
+// GetSharePermissionsResponse 获取分享权限响应体.
 type GetSharePermissionsResponse struct {
 	// ShareID 目标分享 ID
 	ShareID string `json:"share_id"`
@@ -64,7 +64,7 @@ type GetSharePermissionsResponse struct {
 	Permissions SharePermissions `json:"permissions"`
 }
 
-// UpdateSharePermissionsRequest 更新分享权限请求体。
+// UpdateSharePermissionsRequest 更新分享权限请求体.
 type UpdateSharePermissionsRequest struct {
 	// AllowAnonymous 是否允许匿名访问
 	AllowAnonymous bool `json:"allow_anonymous"`
@@ -72,7 +72,7 @@ type UpdateSharePermissionsRequest struct {
 	Users []string `json:"users"`
 }
 
-// AddShareUserRequest 添加分享用户请求体。
+// AddShareUserRequest 添加分享用户请求体.
 type AddShareUserRequest struct {
 	// UserID 被添加的目标用户 ID/标识
 	UserID string `form:"user_id" json:"user_id"`

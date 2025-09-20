@@ -13,26 +13,26 @@ func RegisterTrashRoutes(g *gin.RouterGroup) {
 
 	{
 		// ===== 回收站文件管理路由 =====
-		trashRoutes.GET("", handle.DefaultHandler)         // 获取回收站文件列表
-		trashRoutes.POST("/search", handle.DefaultHandler) // 搜索回收站文件
+		trashRoutes.GET("", handle.ListTrash) // 获取回收站文件列表
+		// 可选：支持搜索接口（当前先复用列表 + 前端过滤，后续落库搜索）
 
 		// ===== 单个文件操作路由 =====
 		fileGroup := trashRoutes.Group("/:id")
 		{
-			fileGroup.POST("/restore", handle.DefaultHandler) // 恢复文件
-			fileGroup.DELETE("", handle.DefaultHandler)       // 永久删除文件
-			fileGroup.GET("", handle.DefaultHandler)          // 获取文件详情
+			fileGroup.POST("/restore", handle.RestoreTrash) // 恢复文件
+			fileGroup.DELETE("", handle.DeleteTrash)        // 永久删除文件
+			// fileGroup.GET("", handle.GetTrashItem)       // 获取文件详情（可选）
 		}
 
 		// ===== 批量操作路由 =====
 		batchGroup := trashRoutes.Group("/batch")
 		{
-			batchGroup.POST("/restore", handle.DefaultHandler) // 批量恢复
-			batchGroup.DELETE("", handle.DefaultHandler)       // 批量永久删除
+			batchGroup.POST("/restore", handle.RestoreTrashBatch) // 批量恢复
+			batchGroup.DELETE("", handle.DeleteTrashBatch)        // 批量永久删除
 		}
 
 		// ===== 回收站管理路由 =====
-		trashRoutes.DELETE("", handle.DefaultHandler)          // 清空回收站
-		trashRoutes.POST("/auto-clean", handle.DefaultHandler) // 自动清理过期文件
+		trashRoutes.DELETE("", handle.EmptyTrash)              // 清空回收站
+		trashRoutes.POST("/auto-clean", handle.AutoCleanTrash) // 自动清理过期文件
 	}
 }

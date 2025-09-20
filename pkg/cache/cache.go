@@ -5,7 +5,6 @@ package cache
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -75,8 +74,8 @@ func Get[T any](ctx context.Context, c *Cache, key string) (T, error) {
 
 	if c != nil && c.useLocalTTL {
 		var item struct {
-			Payload   json.RawMessage `json:"p"`
-			ExpiresAt int64           `json:"e,omitempty"`
+			Payload   []byte `json:"p"`
+			ExpiresAt int64  `json:"e,omitempty"`
 		}
 		if err := sonic.Unmarshal(data, &item); err != nil {
 			return zero, fmt.Errorf("failed to unmarshal cache wrapper: %w", err)
@@ -117,8 +116,8 @@ func Set[T any](ctx context.Context, c *Cache, key string, value T, ttl time.Dur
 		}
 
 		item := struct {
-			Payload   json.RawMessage `json:"p"`
-			ExpiresAt int64           `json:"e,omitempty"`
+			Payload   []byte `json:"p"`
+			ExpiresAt int64  `json:"e,omitempty"`
 		}{Payload: payload, ExpiresAt: expiresAt}
 
 		data, err := sonic.Marshal(item)

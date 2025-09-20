@@ -32,7 +32,7 @@ type PresignedDownloadItem struct {
 	ExpiresIn int    `json:"expires_in"`
 }
 
-// DownloadFilesRequest 直传下载请求（支持单个/批量）。
+// DownloadFilesRequest 直传下载请求（支持单个/批量）.
 // 当 `archive=true` 且包含多个对象时，服务端将以 zip 流式返回.
 type DownloadFilesRequest struct {
 	Objects     []DownloadObjectItem `binding:"required"            json:"objects"`
@@ -47,7 +47,7 @@ type DownloadObjectItem struct {
 	FileName string `json:"file_name,omitempty"`
 }
 
-// ObjectInfo 对象信息（用于返回给客户端展示）。
+// ObjectInfo 对象信息（用于返回给客户端展示）.
 type ObjectInfo struct {
 	ObjectKey    string            `json:"object_key"`
 	Size         int64             `json:"size"`

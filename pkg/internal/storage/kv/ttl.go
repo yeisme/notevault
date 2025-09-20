@@ -2,9 +2,10 @@ package kv
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"time"
+
+	"github.com/bytedance/sonic"
 )
 
 // 跨实现的KV值的常见TTL包装器.
@@ -24,7 +25,7 @@ func encodeWithTTL(value []byte, ttl time.Duration) ([]byte, bool, error) {
 	tv := ttlValue{V: value}
 	tv.E = time.Now().Add(ttl).Unix()
 
-	b, err := json.Marshal(tv)
+	b, err := sonic.Marshal(tv)
 	if err != nil {
 		return nil, false, fmt.Errorf("marshal ttl value: %w", err)
 	}
@@ -42,7 +43,7 @@ func decodeWithTTL(b []byte, now time.Time) ([]byte, bool, bool, error) {
 	}
 
 	var tv ttlValue
-	if err := json.Unmarshal(b[len(ttlMagic):], &tv); err != nil {
+	if err := sonic.Unmarshal(b[len(ttlMagic):], &tv); err != nil {
 		return nil, false, true, fmt.Errorf("unmarshal ttl value: %w", err)
 	}
 
