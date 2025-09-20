@@ -68,7 +68,10 @@ func NewApp(configPath string) *App {
 
 	// 自动迁移数据库（仅当 DB 可用）
 	if manager != nil && manager.GetDBClient() != nil && manager.GetDBClient().GetDB() != nil {
-		if err := manager.GetDBClient().GetDB().AutoMigrate(&model.Files{}); err != nil {
+		if err := manager.GetDBClient().GetDB().AutoMigrate(
+			&model.Files{},
+			&model.Share{},
+		); err != nil {
 			fmt.Printf("AutoMigrate failed: %v\n", err)
 		}
 	}
