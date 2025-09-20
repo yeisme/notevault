@@ -165,15 +165,19 @@ func DeleteFileMeta(c *gin.Context) {
 		return
 	}
 
-	// 复用文件删除接口：构造单个删除请求
+	// 复用文件删除接口：构造单个删除请求并调用 service
 	delReq := &types.DeleteFilesRequest{ObjectKeys: []string{objectKey}}
 	svc := service.NewFileService(c.Request.Context())
-	// 这里调用文件操作服务的删除方法（与 handle/files_operations.go 保持一致）
-	// 为避免循环依赖，这里简单返回 200 + 提示，后续可接入实际删除逻辑。
-	_ = svc // 当前最小实现不直接删除，以免误删；请根据业务接入。
-	_ = delReq
 
-	c.JSON(http.StatusOK, gin.H{"message": "not implemented: delete meta behavior is product-specific"})
+	resp, err := svc.DeleteFiles(c.Request.Context(), user, delReq)
+	if err != nil {
+		l.Error().Err(err).Str("objectKey", objectKey).Msg("delete object failed")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
 }
 
 // GetFileMetaURL 获取元数据预签名 URL（如用于 HEAD/GET 元信息）。

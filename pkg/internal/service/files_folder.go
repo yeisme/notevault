@@ -9,6 +9,7 @@ import (
 
 	"github.com/minio/minio-go/v7"
 
+	"github.com/yeisme/notevault/pkg/internal/model"
 	"github.com/yeisme/notevault/pkg/internal/types"
 )
 
@@ -148,7 +149,7 @@ func (fs *FileService) DeleteFolder(ctx context.Context, user string, folderID s
 		folderPrefix = user + "/" + folderName + "/"
 	}
 
-	// 执行删除操作
+	// 执行删除操作（S3）
 	deletedFiles, err := deleteFolderObjects(ctx, fs.s3Client, bucket, folderPrefix, req.Recursive)
 	if err != nil {
 		return &types.DeleteFolderResponse{
@@ -159,6 +160,10 @@ func (fs *FileService) DeleteFolder(ctx context.Context, user string, folderID s
 			Error:    err.Error(),
 		}, err
 	}
+
+	// 同步到数据库：软删除该前缀下的记录（不阻断主流程）
+	dbx := fs.dbClient.GetDB().WithContext(ctx)
+	_ = dbx.Where("user = ? AND object_key LIKE ?", user, folderPrefix+"%").Delete(&model.Files{}).Error
 
 	return &types.DeleteFolderResponse{
 		FolderID:     folderID,

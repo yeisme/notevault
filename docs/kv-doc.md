@@ -6,6 +6,7 @@
 
 - 包路径：`github.com/yeisme/notevault/pkg/internal/storage/kv`
 - 关键类型：
+
   - `type KVStore interface`：统一的键值存储抽象
     - `Get(ctx, key) ([]byte, error)` 读取
     - `Set(ctx, key, value []byte, ttl time.Duration) error` 写入（可选 TTL）
@@ -54,7 +55,7 @@ store, err := kv.NewKVStore(ctx, kv.KVTypeRedis, &configs.RedisKVConfig{Addr: "1
 ## TTL 语义
 
 - Redis：使用原生 TTL。
-- NATS / Memory / Groupcache：通过统一的值包装方案实现“每个键的 TTL”，读取路径进行懒过期清理：
+- NATS / Memory / Groupcache：通过统一的值包装方案实现"每个键的 TTL"，读取路径进行懒过期清理：
   - 存储时将值编码为 `NVTTL1:` 前缀 + JSON 包含 `v`（原值）与 `e`（过期时间戳）。
   - 读取/判断存在/列举时解码并对过期键做懒清理。
 
@@ -136,7 +137,7 @@ ok      github.com/yeisme/notevault/pkg/internal/storage/kv     62.281s
 
 - 总体趋势：
 
-  - MemoryKV 最快，适合单进程/测试场景；Groupcache 次之，更适合“读多的热点缓存”。
+  - MemoryKV 最快，适合单进程/测试场景；Groupcache 次之，更适合"读多的热点缓存"。
   - Redis/NATS 明显慢于内存类后端，属于跨进程/网络访问的典型代价；在 Windows + Docker 下延迟更高属于常态。
   - 相比 Redis，NATS KV 更慢一些，适合轻量元数据或需要复用 NATS/JetStream 基础设施的场景。
 

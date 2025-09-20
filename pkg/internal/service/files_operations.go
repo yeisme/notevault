@@ -2,11 +2,15 @@ package service
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/minio/minio-go/v7"
+	"gorm.io/gorm"
 
+	"github.com/yeisme/notevault/pkg/internal/model"
 	"github.com/yeisme/notevault/pkg/internal/types"
 )
 
@@ -16,6 +20,8 @@ func (fs *FileService) DeleteFiles(ctx context.Context, user string, req *types.
 	total := len(req.ObjectKeys)
 	success := 0
 	failed := 0
+	// 收集成功删除（或移动到回收站）的对象键，用于后续分享失效
+	toInvalidateShares := make([]string, 0, len(req.ObjectKeys))
 
 	bucket, err := fs.defaultBucket()
 	if err != nil {
@@ -37,7 +43,7 @@ func (fs *FileService) DeleteFiles(ctx context.Context, user string, req *types.
 			continue
 		}
 
-		// 删除对象
+		// 删除对象（S3）
 		err := fs.s3Client.RemoveObject(ctx, bucket, objectKey, minio.RemoveObjectOptions{})
 		if err != nil {
 			result.Error = err.Error()
@@ -47,7 +53,19 @@ func (fs *FileService) DeleteFiles(ctx context.Context, user string, req *types.
 			result.Success = true
 			results = append(results, result)
 			success++
+
+			// 同步到数据库：软删除对应元数据（若存在）。
+			_ = fs.dbSoftDeleteFile(ctx, user, objectKey)
+
+			// 记录待失效分享的对象键
+			toInvalidateShares = append(toInvalidateShares, objectKey)
 		}
+	}
+
+	// 统一处理：对包含被删除对象的分享立即失效（软删分享记录 + 清理缓存）
+	if len(toInvalidateShares) > 0 {
+		// 尽力而为，失败不影响文件删除结果
+		_ = NewShareService(ctx).InvalidateSharesByObjectKeys(ctx, user, toInvalidateShares)
 	}
 
 	return &types.DeleteFilesResponse{
@@ -72,55 +90,30 @@ func (fs *FileService) UpdateFilesMetadata(ctx context.Context, user string,
 	}
 
 	for _, item := range req.Items {
-		result := types.UpdateFileMetadataResult{
-			ObjectKey: item.ObjectKey,
-			Success:   false,
-		}
+		r := types.UpdateFileMetadataResult{ObjectKey: item.ObjectKey}
 
-		// 验证对象键是否属于当前用户
-		if !strings.HasPrefix(item.ObjectKey, user+"/") {
-			result.Error = "access denied: object does not belong to user"
-			results = append(results, result)
+		if !fs.userOwnsKey(user, item.ObjectKey) {
+			r.Error = "access denied: object does not belong to user"
+			results = append(results, r)
 			failed++
 
 			continue
 		}
 
-		// 准备复制选项
-		copyOpts := minio.CopyDestOptions{
-			Bucket:          bucket,
-			Object:          item.ObjectKey,
-			ReplaceMetadata: true,
-		}
-
-		// 设置元数据
-		if len(item.Tags) > 0 {
-			copyOpts.UserMetadata = make(map[string]string)
-			for k, v := range item.Tags {
-				copyOpts.UserMetadata[k] = v
-			}
-		}
-
-		if item.ContentType != "" {
-			copyOpts.ContentType = item.ContentType
-		}
-
-		// 执行复制操作来更新元数据
-		srcOpts := minio.CopySrcOptions{
-			Bucket: bucket,
-			Object: item.ObjectKey,
-		}
-
-		_, err = fs.s3Client.CopyObject(ctx, copyOpts, srcOpts)
-		if err != nil {
-			result.Error = err.Error()
-			results = append(results, result)
+		if err := fs.s3UpdateMetadata(ctx, bucket, item); err != nil {
+			r.Error = err.Error()
+			results = append(results, r)
 			failed++
-		} else {
-			result.Success = true
-			results = append(results, result)
-			success++
+
+			continue
 		}
+
+		// S3 更新成功即算本项成功；DB 同步尽力而为，不影响成功统计。
+		r.Success = true
+		results = append(results, r)
+		success++
+
+		_ = fs.dbUpsertMetadata(ctx, user, bucket, item)
 	}
 
 	return &types.UpdateFilesMetadataResponse{
@@ -275,4 +268,113 @@ func (fs *FileService) MoveFiles(ctx context.Context, user string, req *types.Mo
 		Success: success,
 		Failed:  failed,
 	}, nil
+}
+
+// userOwnsKey 校验对象键是否归属于用户命名空间。
+func (fs *FileService) userOwnsKey(user, key string) bool {
+	return strings.HasPrefix(key, user+"/")
+}
+
+// s3UpdateMetadata 通过拷贝覆盖的方式更新对象的元数据。
+func (fs *FileService) s3UpdateMetadata(ctx context.Context, bucket string, item types.UpdateFileMetadataItem) error {
+	copyOpts := minio.CopyDestOptions{
+		Bucket:          bucket,
+		Object:          item.ObjectKey,
+		ReplaceMetadata: true,
+	}
+
+	if len(item.Tags) > 0 {
+		copyOpts.UserMetadata = make(map[string]string, len(item.Tags))
+		for k, v := range item.Tags {
+			copyOpts.UserMetadata[k] = v
+		}
+	}
+
+	if item.ContentType != "" {
+		copyOpts.ContentType = item.ContentType
+	}
+
+	srcOpts := minio.CopySrcOptions{
+		Bucket: bucket,
+		Object: item.ObjectKey,
+	}
+
+	_, err := fs.s3Client.CopyObject(ctx, copyOpts, srcOpts)
+
+	return err
+}
+
+// dbUpsertMetadata 将用户传入的元数据写入数据库（仅覆盖显式提供的字段）。
+func (fs *FileService) dbUpsertMetadata(ctx context.Context, user, bucket string, item types.UpdateFileMetadataItem) error {
+	dbx := fs.dbClient.GetDB().WithContext(ctx)
+
+	var rec model.Files
+
+	err := dbx.Where("user = ? AND object_key = ?", user, item.ObjectKey).First(&rec).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) { //nolint
+		rec = model.Files{
+			User:      user,
+			ObjectKey: item.ObjectKey,
+			FileName:  lastPathComponent(item.ObjectKey),
+			Bucket:    bucket,
+		}
+
+		if item.ContentType != "" {
+			rec.ContentType = item.ContentType
+		}
+
+		if item.Category != "" {
+			rec.Category = item.Category
+		}
+
+		if item.Description != "" {
+			rec.Description = item.Description
+		}
+
+		if len(item.Tags) > 0 {
+			if b, mErr := json.Marshal(item.Tags); mErr == nil {
+				rec.TagsJSON = string(b)
+			}
+		}
+
+		return dbx.Create(&rec).Error
+	}
+
+	if err != nil {
+		// 其他 DB 错误
+		return err
+	}
+
+	updates := map[string]any{}
+	if item.ContentType != "" {
+		updates["content_type"] = item.ContentType
+	}
+
+	if item.Category != "" {
+		updates["category"] = item.Category
+	}
+
+	if item.Description != "" {
+		updates["description"] = item.Description
+	}
+
+	if len(item.Tags) > 0 {
+		if b, mErr := json.Marshal(item.Tags); mErr == nil {
+			updates["tags_json"] = string(b)
+		}
+	}
+
+	if len(updates) == 0 {
+		return nil
+	}
+
+	return dbx.Model(&model.Files{}).
+		Where("user = ? AND object_key = ?", user, item.ObjectKey).
+		Updates(updates).Error
+}
+
+// dbSoftDeleteFile 软删除数据库中的文件记录（若存在）。
+func (fs *FileService) dbSoftDeleteFile(ctx context.Context, user, objectKey string) error {
+	dbx := fs.dbClient.GetDB().WithContext(ctx)
+	return dbx.Where("user = ? AND object_key = ?", user, objectKey).Delete(&model.Files{}).Error
 }

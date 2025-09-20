@@ -366,6 +366,74 @@ func (s *ShareService) RemoveShareUser(ctx context.Context, user, shareID, targe
 	return nil
 }
 
+// InvalidateSharesByObjectKeys 使包含任一指定对象键的分享立即失效：
+//   - 仅处理当前用户的分享（owner=user）
+//   - 对匹配的分享执行软删除（DeletedAt）
+//   - 清理对应 KV 缓存
+//
+// 注意：尽力而为；若 DB/KV 未初始化返回错误，但调用方通常忽略该错误以不影响主流程。
+func (s *ShareService) InvalidateSharesByObjectKeys(ctx context.Context, user string, objectKeys []string) error {
+	if user == "" || len(objectKeys) == 0 {
+		return fmt.Errorf("user/objectKeys is required")
+	}
+
+	if s.dbc == nil || s.dbc.GetDB() == nil {
+		return errors.New("db not initialized")
+	}
+
+	dbx := s.dbc.GetDB().WithContext(ctx)
+
+	// 简化实现：加载该用户所有未删除分享，内存过滤包含的对象键
+	// 若分享规模很大可考虑在 DB 层做 JSON_CONTAINS 过滤（MySQL/MariaDB/SQLite 支持度不同）
+	var dbShares []model.Share
+	if err := dbx.Where("owner = ? AND deleted_at IS NULL", user).Find(&dbShares).Error; err != nil {
+		return err
+	}
+
+	toDeleteIDs := make([]string, 0)
+
+	keySet := make(map[string]struct{}, len(objectKeys))
+	for _, k := range objectKeys {
+		keySet[k] = struct{}{}
+	}
+
+	for _, sh := range dbShares {
+		rec, err := sh.ToRecord()
+		if err != nil { // 解析失败，跳过
+			continue
+		}
+		// 判断是否有交集
+		has := false
+
+		for _, k := range rec.ObjectKeys {
+			if _, ok := keySet[k]; ok {
+				has = true
+				break
+			}
+		}
+
+		if has {
+			toDeleteIDs = append(toDeleteIDs, sh.ShareID)
+		}
+	}
+
+	if len(toDeleteIDs) == 0 {
+		return nil
+	}
+
+	// 软删除匹配的分享
+	if err := dbx.Where("share_id IN ?", toDeleteIDs).Delete(&model.Share{}).Error; err != nil {
+		return err
+	}
+
+	// 清理缓存（尽力而为）
+	for _, id := range toDeleteIDs {
+		_ = s.kvDel(ctx, makeShareKey(id))
+	}
+
+	return nil
+}
+
 // ---- 内部模型与工具 ----
 
 const (
