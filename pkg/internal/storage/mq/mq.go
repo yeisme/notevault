@@ -79,7 +79,7 @@ type Client struct {
 }
 
 // Publish 便捷发布.
-func (c *Client) Publish(ctx context.Context, topic string, msgs ...*message.Message) error {
+func (c *Client) Publish(topic string, msgs ...*message.Message) error {
 	if c == nil || c.publisher == nil {
 		return fmt.Errorf("mq publisher not initialized")
 	}

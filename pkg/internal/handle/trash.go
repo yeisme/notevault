@@ -191,7 +191,7 @@ func AutoCleanTrash(c *gin.Context) {
 	c.JSON(http.StatusOK, types.TrashActionResponse{Affected: n})
 }
 
-// singleKeyAction 抽取公共逻辑：校验用户、获取 path id、调用具体动作。
+// singleKeyAction 抽取公共逻辑：校验用户、获取 path id、调用具体动作.
 func singleKeyAction(c *gin.Context, missingIDMsg string, act func(svc *service.TrashService, user string, keys []string) (int, error)) {
 	l := log.Logger()
 
@@ -220,7 +220,7 @@ func singleKeyAction(c *gin.Context, missingIDMsg string, act func(svc *service.
 	c.JSON(http.StatusOK, types.TrashActionResponse{Affected: n})
 }
 
-// batchAction 抽取公共逻辑：校验用户、解析 body、调用具体动作。
+// batchAction 抽取公共逻辑：校验用户、解析 body、调用具体动作.
 func batchAction(c *gin.Context, act func(svc *service.TrashService, user string, keys []string) (int, error)) {
 	l := log.Logger()
 

@@ -259,7 +259,6 @@ func (fs *FileService) SyncObjectsToDB(ctx context.Context, user string) error {
 		} else {
 			// 元数据成功落库后，发布对象已存储事件（nv.object.stored）
 			fs.publishObjectStored(
-				ctx,
 				bucket,
 				obj.Key,
 				obj.VersionID,
@@ -348,7 +347,6 @@ func (fs *FileService) SyncObjectsToDBByDate(ctx context.Context, user string, y
 		} else {
 			// 元数据成功落库后，发布对象已存储事件（nv.object.stored）
 			fs.publishObjectStored(
-				ctx,
 				bucket,
 				obj.Key,
 				obj.VersionID,
@@ -404,10 +402,9 @@ func onConflictUserKeyUpdate() clause.Expression {
 	}
 }
 
-// publishObjectStored 发布 nv.object.stored 事件，供同步流程在 upsert 成功后调用。
-// 注意：发布失败仅记录告警，不影响主流程。
+// publishObjectStored 发布 nv.object.stored 事件，供同步流程在 upsert 成功后调用.
+// 注意：发布失败仅记录告警，不影响主流程.
 func (fs *FileService) publishObjectStored(
-	ctx context.Context,
 	bucket, objectKey, versionID, etag string,
 	size int64,
 	contentType, fileName, source string,
@@ -425,13 +422,7 @@ func (fs *FileService) publishObjectStored(
 		FileName: fileName,
 	}
 
-	msg, mErr := queue.NewWatermillMessage(queue.TopicObjectStored, payload)
-	if mErr != nil {
-		nlog.Logger().Warn().Err(mErr).Str("key", objectKey).Msg("build object stored message failed")
-		return
-	}
-
-	if pErr := fs.mqClient.Publish(ctx, queue.TopicObjectStored, msg); pErr != nil {
-		nlog.Logger().Warn().Err(pErr).Str("key", objectKey).Msg("publish object stored message failed")
+	if err := queue.PublishObjectStored(fs.mqClient, payload); err != nil {
+		nlog.Logger().Warn().Err(err).Str("key", objectKey).Msg("publish object stored message failed")
 	}
 }

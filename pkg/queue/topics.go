@@ -4,7 +4,7 @@ package queue
 // 主题命名规范：nv.<域>.<动作>[.<状态>][.<子类型>]，尽量稳定且向后兼容.
 // 域：object(对象存储)、vector(向量解析)、meta(元数据)、kg(知识图谱)、process(数据处理)、audit(审核)等
 // 动作：存储相关(stored/updated/deleted)、处理相关(parse/build/sync/extract)
-// 状态：请求(requested)、进行中(ing)、完成(ed)、失败(failed)
+// 状态：请求(requested)、进度(progress)、完成(ed)、失败(failed)
 // 子类型：针对多模态细分场景(如text/image/audio)
 
 const (
@@ -18,7 +18,7 @@ const (
 	TopicObjectAccessed    = "nv.object.accessed"     // 对象被访问（用于热点数据统计）
 	TopicObjectStorageFull = "nv.object.storage.full" // 对象存储空间不足告警
 
-	// 按数据类型细分的对象存储主题.
+	// 按数据类型细分的对象存储主题. TODO: 通过更细的主题，实现更精细化的处理流程.
 	TopicObjectTextStored  = "nv.object.text.stored"  // 文本类型对象存储完成
 	TopicObjectImageStored = "nv.object.image.stored" // 图像类型对象存储完成
 	TopicObjectAudioStored = "nv.object.audio.stored" // 音频类型对象存储完成
@@ -26,10 +26,10 @@ const (
 	TopicObjectMixedStored = "nv.object.mixed.stored" // 混合模态对象存储完成
 
 	// 数据预处理领域.
-	TopicProcessRequested = "nv.process.requested"  // 请求数据预处理（格式转换/清洗）
-	TopicProcessing       = "nv.process.processing" // 数据预处理中
-	TopicProcessed        = "nv.process.processed"  // 数据预处理完成
-	TopicProcessFailed    = "nv.process.failed"     // 数据预处理失败
+	TopicProcessRequested = "nv.process.requested" // 请求数据预处理（格式转换/清洗）
+	TopicProcessProgress  = "nv.process.progress"  // 数据预处理进度（建议订阅此主题获取实时进度）
+	TopicProcessed        = "nv.process.processed" // 数据预处理完成
+	TopicProcessFailed    = "nv.process.failed"    // 数据预处理失败
 
 	// 按处理类型细分的预处理主题.
 	TopicProcessConverted  = "nv.process.converted"  // 格式转换完成
@@ -38,7 +38,7 @@ const (
 
 	// 向量解析领域.
 	TopicVectorParseRequested = "nv.vector.parse.requested" // 请求对指定对象进行内容解析与向量化处理
-	TopicVectorParsing        = "nv.vector.parsing"         // 向量解析任务正在执行中
+	TopicVectorProgress       = "nv.vector.progress"        // 解析进度（建议订阅此主题获取实时进度）
 	TopicVectorParsed         = "nv.vector.parsed"          // 向量解析完成
 	TopicVectorParseFailed    = "nv.vector.parse.failed"    // 向量解析失败
 	TopicVectorIndexed        = "nv.vector.indexed"         // 向量已写入向量数据库
@@ -51,7 +51,7 @@ const (
 
 	// 元数据同步领域.
 	TopicMetaSyncRequested = "nv.meta.sync.requested" // 请求将对象存储的元数据同步到数据库
-	TopicMetaSyncing       = "nv.meta.syncing"        // 元数据同步过程中
+	TopicMetaSyncProgress  = "nv.meta.sync.progress"  // 同步进度（建议订阅此主题获取实时进度）
 	TopicMetaSynced        = "nv.meta.synced"         // 元数据成功同步到数据库
 	TopicMetaSyncFailed    = "nv.meta.sync.failed"    // 元数据同步失败
 	TopicMetaUpdated       = "nv.meta.updated"        // 数据库中元数据被更新
@@ -61,7 +61,7 @@ const (
 
 	// 知识图谱领域.
 	TopicKGBuildRequested     = "nv.kg.build.requested"     // 请求基于解析结果构建知识图谱
-	TopicKGBuilding           = "nv.kg.building"            // 知识图谱构建中
+	TopicKGProgress           = "nv.kg.progress"            // 构建进度（建议订阅此主题获取实时进度）
 	TopicKGBuilt              = "nv.kg.built"               // 知识图谱构建完成
 	TopicKGBuildFailed        = "nv.kg.build.failed"        // 知识图谱构建失败
 	TopicKGUpdated            = "nv.kg.updated"             // 知识图谱已有数据更新
@@ -72,7 +72,7 @@ const (
 
 	// 内容审核领域.
 	TopicAuditRequested = "nv.audit.requested" // 请求内容审核
-	TopicAuditing       = "nv.audit.auditing"  // 内容审核中
+	TopicAuditProgress  = "nv.audit.progress"  // 审核进度（建议订阅此主题获取实时进度）
 	TopicAuditPassed    = "nv.audit.passed"    // 内容审核通过
 	TopicAuditRejected  = "nv.audit.rejected"  // 内容审核拒绝
 	TopicAuditExpired   = "nv.audit.expired"   // 审核任务超时
@@ -92,36 +92,38 @@ var (
 
 	// 数据预处理相关主题集合.
 	ProcessTopics = []string{
-		TopicProcessRequested, TopicProcessing, TopicProcessed,
-		TopicProcessFailed, TopicProcessConverted, TopicProcessCleaned,
-		TopicProcessCompressed,
+		TopicProcessRequested, TopicProcessProgress, // 进度
+		TopicProcessed, TopicProcessFailed,
+		TopicProcessConverted, TopicProcessCleaned, TopicProcessCompressed,
 	}
 
 	// 向量解析相关主题集合.
 	VectorTopics = []string{
-		TopicVectorParseRequested, TopicVectorParsing, TopicVectorParsed,
-		TopicVectorParseFailed, TopicVectorIndexed, TopicVectorIndexFailed,
+		TopicVectorParseRequested, TopicVectorProgress, // 进度
+		TopicVectorParsed, TopicVectorParseFailed,
+		TopicVectorIndexed, TopicVectorIndexFailed,
 		TopicVectorTextParsed, TopicVectorImageParsed, TopicVectorAudioParsed,
 	}
 
 	// 元数据相关主题集合.
 	MetaTopics = []string{
-		TopicMetaSyncRequested, TopicMetaSyncing, TopicMetaSynced,
-		TopicMetaSyncFailed, TopicMetaUpdated, TopicMetaDeleted,
+		TopicMetaSyncRequested, TopicMetaSyncProgress, // 进度
+		TopicMetaSynced, TopicMetaSyncFailed,
+		TopicMetaUpdated, TopicMetaDeleted,
 		TopicMetaIndexed, TopicMetaIndexFailed,
 	}
 
 	// 知识图谱相关主题集合.
 	KGTopics = []string{
-		TopicKGBuildRequested, TopicKGBuilding, TopicKGBuilt,
-		TopicKGBuildFailed, TopicKGUpdated, TopicKGMerged,
-		TopicKGEntityExtracted, TopicKGRelationExtracted,
-		TopicKGAttributeExtracted,
+		TopicKGBuildRequested, TopicKGProgress, // 进度
+		TopicKGBuilt, TopicKGBuildFailed,
+		TopicKGUpdated, TopicKGMerged,
+		TopicKGEntityExtracted, TopicKGRelationExtracted, TopicKGAttributeExtracted,
 	}
 
 	// 内容审核相关主题集合.
 	AuditTopics = []string{
-		TopicAuditRequested, TopicAuditing, TopicAuditPassed,
-		TopicAuditRejected, TopicAuditExpired,
+		TopicAuditRequested, TopicAuditProgress, // 进度
+		TopicAuditPassed, TopicAuditRejected, TopicAuditExpired,
 	}
 )

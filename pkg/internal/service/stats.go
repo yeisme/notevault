@@ -9,7 +9,7 @@ import (
 	"github.com/yeisme/notevault/pkg/internal/types"
 )
 
-// StatsService 提供统计计算（基于 DB 的 Files 表）。
+// StatsService 提供统计计算（基于 DB 的 Files 表）.
 type StatsService struct{ *FileService }
 
 func NewStatsService(c context.Context) *StatsService { return &StatsService{NewFileService(c)} }
@@ -23,14 +23,14 @@ const (
 	hundredMB        = 100 << 20
 )
 
-// 通用聚合结果行。
+// 通用聚合结果行.
 type aggRow struct {
 	Key string `gorm:"column:k"`
 	Cnt int64  `gorm:"column:cnt"`
 	Sum int64  `gorm:"column:sum"`
 }
 
-// FilesSummary 统计当前用户活跃/回收总量与大小。
+// FilesSummary 统计当前用户活跃/回收总量与大小.
 func (s *StatsService) FilesSummary(ctx context.Context, user string) (types.StatsFilesSummary, error) {
 	if user == "" {
 		return types.StatsFilesSummary{}, fmt.Errorf("user required")
@@ -71,7 +71,7 @@ func (s *StatsService) FilesSummary(ctx context.Context, user string) (types.Sta
 	}, nil
 }
 
-// FilesByType 按 content_type 一级类型（如 image、video、application）聚合。
+// FilesByType 按 content_type 一级类型（如 image、video、application）聚合.
 func (s *StatsService) FilesByType(ctx context.Context, user string) ([]types.StatsTypeItem, error) { //nolint:ireturn
 	if user == "" {
 		return nil, fmt.Errorf("user required")
@@ -106,7 +106,7 @@ func (s *StatsService) FilesByType(ctx context.Context, user string) ([]types.St
 	return out, nil
 }
 
-// FilesBySizeBuckets 按大小分桶（可根据需要调整分桶）。
+// FilesBySizeBuckets 按大小分桶（可根据需要调整分桶）.
 func (s *StatsService) FilesBySizeBuckets(ctx context.Context, user string) ([]types.StatsSizeBucket, error) { //nolint:ireturn
 	if user == "" {
 		return nil, fmt.Errorf("user required")
@@ -147,7 +147,7 @@ func (s *StatsService) FilesBySizeBuckets(ctx context.Context, user string) ([]t
 	return buckets, nil
 }
 
-// FilesTrend 按天统计数量与大小趋势（最近 N 天）。
+// FilesTrend 按天统计数量与大小趋势（最近 N 天）.
 func (s *StatsService) FilesTrend(ctx context.Context, user string, days int) ([]types.StatsTrendPoint, error) { //nolint:ireturn
 	if user == "" {
 		return nil, fmt.Errorf("user required")
@@ -203,7 +203,7 @@ func (s *StatsService) FilesTrend(ctx context.Context, user string, days int) ([
 	return out, nil
 }
 
-// StorageSummary 汇总活跃/回收的对象与大小。
+// StorageSummary 汇总活跃/回收的对象与大小.
 func (s *StatsService) StorageSummary(ctx context.Context, user string) (types.StorageSummary, error) {
 	if user == "" {
 		return types.StorageSummary{}, fmt.Errorf("user required")
@@ -217,7 +217,7 @@ func (s *StatsService) StorageSummary(ctx context.Context, user string) (types.S
 	return types.StorageSummary{ActiveObjects: fs.ActiveFiles, ActiveSize: fs.ActiveSize, TrashObjects: fs.TrashedFiles, TrashSize: fs.TrashedSize}, nil
 }
 
-// StorageByBucket 活跃对象按桶聚合。
+// StorageByBucket 活跃对象按桶聚合.
 func (s *StatsService) StorageByBucket(ctx context.Context, user string) ([]types.StorageByBucketItem, error) { //nolint:ireturn
 	if user == "" {
 		return nil, fmt.Errorf("user required")
@@ -242,14 +242,14 @@ func (s *StatsService) StorageByBucket(ctx context.Context, user string) ([]type
 	return out, nil
 }
 
-// UploadsDaily 最近 N 日的每日上传统计（按 last_modified 来近似）。
+// UploadsDaily 最近 N 日的每日上传统计（按 last_modified 来近似）.
 func (s *StatsService) UploadsDaily(ctx context.Context, user string, days int) ([]types.StatsTrendPoint, error) {
 	// 直接复用 FilesTrend
 	return s.FilesTrend(ctx, user, days)
 }
 
-// UploadsRange 按给定的 UTC 日期范围（闭区间，精确到天）统计每日上传数量与大小。
-// start 和 end 仅取日期部分；若 start > end 则返回空。
+// UploadsRange 按给定的 UTC 日期范围（闭区间，精确到天）统计每日上传数量与大小.
+// start 和 end 仅取日期部分；若 start > end 则返回空.
 func (s *StatsService) UploadsRange(ctx context.Context, user string, start, end time.Time) ([]types.StatsTrendPoint, error) { //nolint:ireturn
 	if user == "" {
 		return nil, fmt.Errorf("user required")
@@ -302,7 +302,7 @@ func (s *StatsService) UploadsRange(ctx context.Context, user string, start, end
 	return out, nil
 }
 
-// UploadsByUser 留出扩展：当系统支持多用户聚合时可实现（目前仅统计当前 user）。
+// UploadsByUser 留出扩展：当系统支持多用户聚合时可实现（目前仅统计当前 user）.
 func (s *StatsService) UploadsByUser(ctx context.Context, user string) ([]types.StatsTypeItem, error) {
 	if user == "" {
 		return nil, fmt.Errorf("user required")
@@ -327,7 +327,7 @@ func (s *StatsService) UploadsByUser(ctx context.Context, user string) ([]types.
 	return out, nil
 }
 
-// Dashboard/Report 基础占位。
+// Dashboard/Report 基础占位.
 func (s *StatsService) Dashboard(ctx context.Context, user string) (map[string]any, error) {
 	fs, err := s.FilesSummary(ctx, user)
 	if err != nil {
@@ -341,7 +341,7 @@ func (s *StatsService) Dashboard(ctx context.Context, user string) (map[string]a
 	return map[string]any{"summary": fs, "size_buckets": buckets, "types": typesAgg, "trend": trend}, nil
 }
 
-// queryAgg 针对 Files 表执行通用聚合查询，约定 select 中将分组键命名为别名 k。
+// queryAgg 针对 Files 表执行通用聚合查询，约定 select 中将分组键命名为别名 k.
 func (s *StatsService) queryAgg(ctx context.Context, selectExpr string, whereExpr string, groupExpr string, args ...any) ([]aggRow, error) {
 	dbx := s.dbClient.GetDB().WithContext(ctx)
 

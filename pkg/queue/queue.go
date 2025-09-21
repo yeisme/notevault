@@ -1,7 +1,7 @@
-// Package queue 管理消息队列，用于异步处理多模态数据解析任务。
+// Package queue 管理消息队列，用于异步处理多模态数据解析任务.
 //
 // 概览
-//   - 采用发布/订阅模型，解耦“对象存储、预处理、解析、索引”等环节
+//   - 采用发布/订阅模型，解耦"对象存储、预处理、解析、索引"等环节
 //   - 统一的消息封装：Message[Payload] = Header + Payload
 //   - 主题常量见 topics.go，负载结构体见 payloads.go
 //   - 默认 JSON 编解码（bytedance/sonic），跨语言易解析
@@ -101,9 +101,9 @@
 //  1. occurred_at 为 UTC，RFC3339 格式；Python 端用 datetime / pydantic 可直接解析
 //  2. version 便于后向兼容，建议消费者忽略未知字段
 //  3. Header.topic 与消息中间件的 Subject/Topic 可能重复，意在离线可追踪
-//  4. 若需要业务级幂等，可将消息 ID 设为“确定性键”（如 bucket|object_key|version_id 的哈希）
+//  4. 若需要业务级幂等，可将消息 ID 设为"确定性键"（如 bucket|object_key|version_id 的哈希）
 
-// 参考：topics.go（主题）、payloads.go（负载）、internal/storage/mq（MQ 客户端封装）。
+// 参考：topics.go（主题）、payloads.go（负载）、internal/storage/mq（MQ 客户端封装）.
 package queue
 
 import (

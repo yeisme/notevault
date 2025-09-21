@@ -17,7 +17,7 @@ const defaultTrendDays = 14
 //  2. 创建 StatsService
 //  3. 统一错误处理与 JSON 输出
 //
-// 回调 fn 中负责具体业务逻辑与返回数据（可返回任意 JSON-able 结构）。
+// 回调 fn 中负责具体业务逻辑与返回数据（可返回任意 JSON-able 结构）.
 func doStats(c *gin.Context, errLogMsg string, fn func(svc *service.StatsService, user string) (any, error)) {
 	l := log.Logger()
 
@@ -44,7 +44,7 @@ func doStats(c *gin.Context, errLogMsg string, fn func(svc *service.StatsService
 	c.JSON(http.StatusOK, data)
 }
 
-// GetFilesStats 汇总文件统计。
+// GetFilesStats 汇总文件统计.
 //
 //	@Summary	文件统计汇总
 //	@Tags		统计
@@ -68,7 +68,7 @@ func GetFilesStats(c *gin.Context) {
 	})
 }
 
-// GetFilesStatsByType 按类型统计。
+// GetFilesStatsByType 按类型统计.
 //
 //	@Summary	文件类型统计
 //	@Tags		统计
@@ -83,7 +83,7 @@ func GetFilesStatsByType(c *gin.Context) {
 	})
 }
 
-// GetFilesStatsBySize 文件大小分布。
+// GetFilesStatsBySize 文件大小分布.
 //
 //	@Summary	文件大小分布
 //	@Tags		统计
@@ -98,7 +98,7 @@ func GetFilesStatsBySize(c *gin.Context) {
 	})
 }
 
-// GetFilesTrend 文件数量趋势。
+// GetFilesTrend 文件数量趋势.
 //
 //	@Summary	文件数量趋势
 //	@Tags		统计
@@ -113,7 +113,7 @@ func GetFilesTrend(c *gin.Context) {
 	})
 }
 
-// StorageStats 存储总体统计。
+// StorageStats 存储总体统计.
 //
 //	@Summary	存储统计汇总
 //	@Tags		统计
@@ -135,7 +135,7 @@ func StorageStats(c *gin.Context) {
 	})
 }
 
-// StorageByBucket 按存储桶统计。
+// StorageByBucket 按存储桶统计.
 //
 //	@Summary	按桶统计
 //	@Tags		统计
@@ -150,7 +150,7 @@ func StorageByBucket(c *gin.Context) {
 	})
 }
 
-// UploadsStats 上传历史统计（支持按年/月/日查询）。
+// UploadsStats 上传历史统计（支持按年/月/日查询）.
 //
 //	@Summary	上传历史统计
 //	@Tags		统计
@@ -208,7 +208,7 @@ func UploadsStats(c *gin.Context) {
 	})
 }
 
-// UploadsDailyStats 每日上传统计（最近 N 天）。
+// UploadsDailyStats 每日上传统计（最近 N 天）.
 //
 //	@Summary	每日上传统计
 //	@Tags		统计
@@ -223,7 +223,7 @@ func UploadsDailyStats(c *gin.Context) {
 	})
 }
 
-// UploadsByUser 按用户统计（当前用户视角）。
+// UploadsByUser 按用户统计（当前用户视角）.
 //
 //	@Summary	按用户统计上传
 //	@Tags		统计
@@ -238,7 +238,7 @@ func UploadsByUser(c *gin.Context) {
 	})
 }
 
-// DashboardStats 统计仪表板数据。
+// DashboardStats 统计仪表板数据.
 //
 //	@Summary	统计仪表板
 //	@Tags		统计
@@ -253,7 +253,7 @@ func DashboardStats(c *gin.Context) {
 	})
 }
 
-// ReportStats 生成统计报告（当前返回与仪表板一致的数据结构，可按需扩展）。
+// ReportStats 生成统计报告（当前返回与仪表板一致的数据结构，可按需扩展）.
 //
 //	@Summary	统计报告
 //	@Tags		统计

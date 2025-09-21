@@ -70,8 +70,8 @@ type VectorParseRequestedPayload struct {
 	EmbeddingModel string    `json:"embedding_model,omitempty"`
 }
 
-// VectorParsingPayload 任务进行中，支持进度汇报.
-type VectorParsingPayload struct {
+// VectorProgressPayload 任务进行中，支持进度汇报.
+type VectorProgressPayload struct {
 	Object   ObjectRef `json:"object"`
 	TaskID   string    `json:"task_id,omitempty"`
 	Progress int       `json:"progress,omitempty"` // 0-100
@@ -101,8 +101,8 @@ type MetaSyncRequestedPayload struct {
 	Force  bool      `json:"force,omitempty"`
 }
 
-// MetaSyncingPayload 同步中状态.
-type MetaSyncingPayload struct {
+// MetaSyncProgressPayload 同步中状态.
+type MetaSyncProgressPayload struct {
 	Object   ObjectRef `json:"object"`
 	Progress int       `json:"progress,omitempty"`
 	Message  string    `json:"message,omitempty"`
@@ -128,8 +128,30 @@ type KGBuildRequestedPayload struct {
 	BuildPolicy string    `json:"build_policy,omitempty"` // 构建策略：full/incremental
 }
 
-// KGBuildingPayload 构建中.
-type KGBuildingPayload struct {
+// KGProgressPayload 构建中.
+type KGProgressPayload struct {
+	Object   ObjectRef `json:"object"`
+	TaskID   string    `json:"task_id,omitempty"`
+	Progress int       `json:"progress,omitempty"`
+	Message  string    `json:"message,omitempty"`
+}
+
+// -------------------------- 数据预处理领域 --------------------------
+
+// ProcessProgressPayload 预处理进度（适用于 nv.process.progress）.
+// 可选字段 Stage 用于描述当前阶段（如 convert/clean/compress）.
+type ProcessProgressPayload struct {
+	Object   ObjectRef `json:"object"`
+	TaskID   string    `json:"task_id,omitempty"`
+	Stage    string    `json:"stage,omitempty"`
+	Progress int       `json:"progress,omitempty"`
+	Message  string    `json:"message,omitempty"`
+}
+
+// -------------------------- 审核领域 --------------------------
+
+// AuditProgressPayload 审核进度（适用于 nv.audit.progress）.
+type AuditProgressPayload struct {
 	Object   ObjectRef `json:"object"`
 	TaskID   string    `json:"task_id,omitempty"`
 	Progress int       `json:"progress,omitempty"`
