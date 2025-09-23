@@ -24,6 +24,7 @@ import (
 	"github.com/yeisme/notevault/pkg/log"
 	"github.com/yeisme/notevault/pkg/metrics"
 	"github.com/yeisme/notevault/pkg/middleware"
+	"github.com/yeisme/notevault/pkg/scheduler"
 	"github.com/yeisme/notevault/pkg/tracing"
 )
 
@@ -39,6 +40,7 @@ type App struct {
 	config        *configs.AppConfig
 	log           *zerolog.Logger
 	mg            *storage.Manager
+	scheduler     *scheduler.Scheduler
 	done          chan struct{} // 用于通知 Run 方法退出（带缓冲，避免阻塞）
 }
 
@@ -76,6 +78,13 @@ func NewApp(configPath string) *App {
 		}
 	}
 
+	// 初始化调度器
+	sched, err := scheduler.NewScheduler()
+	if err != nil {
+		fmt.Printf("Error initializing scheduler: %v\n", err)
+		os.Exit(1)
+	}
+
 	l := log.Logger()
 	gin.DefaultWriter = log.NewGinWriter(l, zerolog.InfoLevel)
 	gin.DefaultErrorWriter = log.NewGinWriter(l, zerolog.ErrorLevel)
@@ -88,6 +97,7 @@ func NewApp(configPath string) *App {
 		middleware.TracingMiddleware(),
 		middleware.PrometheusMiddleware(),
 		middleware.StorageMiddleware(manager),
+		middleware.SchedulerMiddleware(sched),
 		// 限流与熔断（按配置启用）
 		middleware.RateLimitMiddleware(config.RateLimit),
 		middleware.CircuitBreakerMiddleware(config.CircuitBreaker),
@@ -118,6 +128,7 @@ func NewApp(configPath string) *App {
 		config:        config,
 		log:           l,
 		mg:            manager,
+		scheduler:     sched,
 		done:          make(chan struct{}, 1),
 	}
 }
@@ -149,6 +160,12 @@ func (a *App) Run() error {
 			return err
 		}
 
+		return nil
+	})
+
+	// 启动调度器
+	g.Go(func() error {
+		a.scheduler.Start()
 		return nil
 	})
 
@@ -196,6 +213,10 @@ func (a *App) shutdown() {
 
 	if err := a.mg.Close(); err != nil {
 		a.log.Error().Err(err).Msg("Error closing storage manager")
+	}
+
+	if err := a.scheduler.Stop(); err != nil {
+		a.log.Error().Err(err).Msg("Error stopping scheduler")
 	}
 
 	// 发送完成信号
