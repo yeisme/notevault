@@ -19,6 +19,7 @@ import (
 
 	"github.com/yeisme/notevault/pkg/api"
 	"github.com/yeisme/notevault/pkg/configs"
+	"github.com/yeisme/notevault/pkg/internal/jobs"
 	"github.com/yeisme/notevault/pkg/internal/model"
 	"github.com/yeisme/notevault/pkg/internal/storage"
 	"github.com/yeisme/notevault/pkg/log"
@@ -98,6 +99,8 @@ func NewApp(configPath string) *App {
 		middleware.PrometheusMiddleware(),
 		middleware.StorageMiddleware(manager),
 		middleware.SchedulerMiddleware(sched),
+		// 角色中间件：解析 X-Role 并注入到上下文
+		middleware.RoleMiddleware(),
 		// 限流与熔断（按配置启用）
 		middleware.RateLimitMiddleware(config.RateLimit),
 		middleware.CircuitBreakerMiddleware(config.CircuitBreaker),
@@ -166,6 +169,9 @@ func (a *App) Run() error {
 	// 启动调度器
 	g.Go(func() error {
 		a.scheduler.Start()
+		// 注册定时任务
+		_ = jobs.RegisterCronJobs(a.scheduler, a.mg)
+
 		return nil
 	})
 

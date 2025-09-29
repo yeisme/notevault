@@ -3,6 +3,8 @@ package router
 
 import (
 	"github.com/gin-gonic/gin"
+
+	"github.com/yeisme/notevault/pkg/middleware"
 )
 
 // RegisterRoutes 注册所有业务相关路由.
@@ -12,4 +14,8 @@ func RegisterRoutes(g *gin.RouterGroup) {
 	RegisterSharesRoutes(g)
 	RegisterTrashRoutes(g)
 	RegisterStatsRoutes(g)
+	// 仅管理员可访问调度相关接口
+	admin := g.Group("")
+	admin.Use(middleware.RequireMinRole(middleware.RoleAdmin))
+	RegisterSchedulerRoutes(admin)
 }

@@ -14,7 +14,6 @@ func RegisterAPIs(e *gin.Engine) {
 
 	v1 := e.Group("/api/v1")
 	router.RegisterRoutes(v1)
-	router.RegisterSchedulerRoutes(v1)
 
 	router.RegisterSwaggerRoute(e)
 }
