@@ -57,6 +57,9 @@ func (fs *FileService) DeleteFiles(ctx context.Context, user string, req *types.
 			// 同步到数据库：软删除对应元数据（若存在）.
 			_ = fs.dbSoftDeleteFile(ctx, user, objectKey)
 
+			// 发布对象删除事件
+			fs.publishObjectDeleted(bucket, objectKey, "", false)
+
 			// 记录待失效分享的对象键
 			toInvalidateShares = append(toInvalidateShares, objectKey)
 		}
@@ -172,7 +175,7 @@ func (fs *FileService) CopyFiles(ctx context.Context, user string, req *types.Co
 			Object: item.DestinationKey,
 		}
 
-		_, err := fs.s3Client.CopyObject(ctx, dstOpts, srcOpts)
+		ui, err := fs.s3Client.CopyObject(ctx, dstOpts, srcOpts)
 		if err != nil {
 			result.Error = err.Error()
 			results = append(results, result)
@@ -181,6 +184,12 @@ func (fs *FileService) CopyFiles(ctx context.Context, user string, req *types.Co
 			result.Success = true
 			results = append(results, result)
 			success++
+
+			// 发布对象移动事件
+			fs.publishObjectMoved(bucket, item.SourceKey, item.DestinationKey, "move")
+
+			// 复制生成的新对象可视为一次写入/更新
+			fs.publishObjectStored(bucket, item.DestinationKey, ui.VersionID, "", 0, "", lastPathComponent(item.DestinationKey), "move")
 		}
 	}
 

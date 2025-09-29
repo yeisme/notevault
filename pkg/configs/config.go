@@ -70,6 +70,7 @@ type (
 		Metrics        MetricsConfig        `mapstructure:"metrics"`         // MetricsConfig 监控指标配置
 		RateLimit      RateLimitConfig      `mapstructure:"rate_limit"`      // 速率限制配置（可选）
 		CircuitBreaker CircuitBreakerConfig `mapstructure:"circuit_breaker"` // 熔断器配置（可选）
+		Events         EventsConfig         `mapstructure:"events"`          // 事件发布开关
 	}
 )
 
@@ -166,6 +167,7 @@ func setAllDefaults(v *viper.Viper) {
 		metricsConfig   MetricsConfig
 		rateLimitConfig RateLimitConfig
 		cbConfig        CircuitBreakerConfig
+		eventsConfig    EventsConfig
 	)
 
 	serverConfig.setDefaults(v)
@@ -178,6 +180,7 @@ func setAllDefaults(v *viper.Viper) {
 	metricsConfig.setDefaults(v)
 	rateLimitConfig.setDefaults(v)
 	cbConfig.setDefaults(v)
+	eventsConfig.setDefaults(v)
 }
 
 func reloadConfigs(v *viper.Viper, isHotReload bool, onReload func()) {

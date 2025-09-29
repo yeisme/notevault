@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
+	"github.com/yeisme/notevault/pkg/configs"
 	ctxPkg "github.com/yeisme/notevault/pkg/context"
 	"github.com/yeisme/notevault/pkg/internal/model"
 	"github.com/yeisme/notevault/pkg/internal/storage/db"
@@ -409,6 +410,11 @@ func (fs *FileService) publishObjectStored(
 	size int64,
 	contentType, fileName, source string,
 ) {
+	cfg := configs.GetConfig().Events
+	if !cfg.Enabled || !cfg.Object.Stored {
+		return
+	}
+
 	payload := queue.ObjectStoredPayload{
 		Object: queue.ObjectRef{
 			Bucket:      bucket,
@@ -425,4 +431,187 @@ func (fs *FileService) publishObjectStored(
 	if err := queue.PublishObjectStored(fs.mqClient, payload); err != nil {
 		nlog.Logger().Warn().Err(err).Str("key", objectKey).Msg("publish object stored message failed")
 	}
+
+	// 结构化日志：对象写入完成
+	nlog.Logger().Info().
+		Str("key", objectKey).
+		Str("ver", versionID).
+		Str("etag", etag).
+		Str("src", source).
+		Str("file", fileName).
+		Str("event", "nv.object.stored").
+		Msg("object stored")
+}
+
+// publishObjectUpdated 发布 nv.object.updated（通常是新版本创建或内容变更后）.
+func (fs *FileService) publishObjectUpdated(
+	bucket, objectKey, versionID, etag string,
+	size int64,
+	contentType, fileName, source string,
+) {
+	cfg := configs.GetConfig().Events
+	if !cfg.Enabled || !cfg.Object.Updated {
+		return
+	}
+
+	payload := queue.ObjectUpdatedPayload{
+		Object: queue.ObjectRef{
+			Bucket:      bucket,
+			ObjectKey:   objectKey,
+			VersionID:   versionID,
+			ETag:        etag,
+			Size:        size,
+			ContentType: contentType,
+		},
+		PrevVersionID: "", // 可在调用处填充
+	}
+
+	if err := queue.PublishObjectUpdated(fs.mqClient, payload); err != nil {
+		nlog.Logger().Warn().Err(err).Str("key", objectKey).Msg("publish object updated message failed")
+	}
+
+	nlog.Logger().Info().Str("key", objectKey).
+		Str("ver", versionID).Str("etag", etag).
+		Str("src", source).Str("file", fileName).
+		Str("event", "nv.object.updated").
+		Msg("object updated")
+}
+
+// publishObjectDeleted 发布 nv.object.deleted 事件.
+func (fs *FileService) publishObjectDeleted(bucket, objectKey, versionID string, deletedAll bool) {
+	cfg := configs.GetConfig().Events
+	if !cfg.Enabled || !cfg.Object.Deleted {
+		return
+	}
+
+	payload := queue.ObjectDeletedPayload{
+		Object: queue.ObjectRef{
+			Bucket:    bucket,
+			ObjectKey: objectKey,
+			VersionID: versionID,
+		},
+		DeletedAll: deletedAll,
+	}
+	if err := queue.PublishObjectDeleted(fs.mqClient, payload); err != nil {
+		nlog.Logger().Warn().Err(err).Str("key", objectKey).Msg("publish object deleted message failed")
+	}
+
+	// 结构化日志：对象删除
+	nlog.Logger().Info().
+		Str("key", objectKey).
+		Str("ver", versionID).
+		Bool("all", deletedAll).
+		Str("event", "nv.object.deleted").
+		Msg("object deleted")
+}
+
+// publishObjectVersioned 发布 nv.object.versioned 事件.
+func (fs *FileService) publishObjectVersioned(bucket, objectKey, versionID, baseVersionID string) {
+	cfg := configs.GetConfig().Events
+	if !cfg.Enabled || !cfg.Object.Versioned {
+		return
+	}
+
+	payload := queue.ObjectVersionedPayload{
+		Object: queue.ObjectRef{
+			Bucket:    bucket,
+			ObjectKey: objectKey,
+			VersionID: versionID,
+		},
+		BaseVersionID: baseVersionID,
+	}
+	if err := queue.PublishObjectVersioned(fs.mqClient, payload); err != nil {
+		nlog.Logger().Warn().Err(err).Str("key", objectKey).Msg("publish object versioned message failed")
+	}
+
+	// 结构化日志：对象产生新版本
+	nlog.Logger().Info().
+		Str("key", objectKey).
+		Str("ver", versionID).
+		Str("base", baseVersionID).
+		Str("event", "nv.object.versioned").
+		Msg("object versioned")
+}
+
+// publishObjectRestored 发布 nv.object.restored 事件.
+func (fs *FileService) publishObjectRestored(bucket, objectKey, fromVersion, restoredAs string) {
+	cfg := configs.GetConfig().Events
+	if !cfg.Enabled || !cfg.Object.Restored {
+		return
+	}
+
+	payload := queue.ObjectRestoredPayload{
+		Object: queue.ObjectRef{
+			Bucket:    bucket,
+			ObjectKey: objectKey,
+			VersionID: restoredAs,
+		},
+		FromVersion: fromVersion,
+		RestoredAs:  restoredAs,
+	}
+	if err := queue.PublishObjectRestored(fs.mqClient, payload); err != nil {
+		nlog.Logger().Warn().Err(err).Str("key", objectKey).Msg("publish object restored message failed")
+	}
+
+	// 结构化日志：对象从历史版本恢复
+	nlog.Logger().Info().
+		Str("key", objectKey).
+		Str("from", fromVersion).
+		Str("as", restoredAs).
+		Str("event", "nv.object.restored").
+		Msg("object restored")
+}
+
+// publishObjectMoved 发布 nv.object.moved 事件.
+func (fs *FileService) publishObjectMoved(bucket, srcKey, dstKey, reason string) {
+	cfg := configs.GetConfig().Events
+	if !cfg.Enabled || !cfg.Object.Moved {
+		return
+	}
+
+	payload := queue.ObjectMovedPayload{
+		Source:      queue.ObjectRef{Bucket: bucket, ObjectKey: srcKey},
+		Destination: queue.ObjectRef{Bucket: bucket, ObjectKey: dstKey},
+		Reason:      reason,
+	}
+	if err := queue.PublishObjectMoved(fs.mqClient, payload); err != nil {
+		nlog.Logger().Warn().Err(err).Str("src", srcKey).Str("dst", dstKey).Msg("publish object moved message failed")
+	}
+
+	// 结构化日志：对象移动/重命名
+	nlog.Logger().Info().
+		Str("src", srcKey).
+		Str("dst", dstKey).
+		Str("reason", reason).
+		Str("event", "nv.object.moved").
+		Msg("object moved")
+}
+
+// publishObjectAccessed 发布 nv.object.accessed 事件.
+func (fs *FileService) publishObjectAccessed(bucket, objectKey, method, via, userAgent, remote string) {
+	cfg := configs.GetConfig().Events
+	if !cfg.Enabled || !cfg.Object.Accessed {
+		return
+	}
+
+	payload := queue.ObjectAccessedPayload{
+		Object:     queue.ObjectRef{Bucket: bucket, ObjectKey: objectKey},
+		Method:     method,
+		Via:        via,
+		UserAgent:  userAgent,
+		RemoteAddr: remote,
+	}
+	if err := queue.PublishObjectAccessed(fs.mqClient, payload); err != nil {
+		nlog.Logger().Warn().Err(err).Str("key", objectKey).Msg("publish object accessed message failed")
+	}
+
+	// 结构化日志：对象访问
+	nlog.Logger().Info().
+		Str("key", objectKey).
+		Str("method", method).
+		Str("via", via).
+		Str("ua", userAgent).
+		Str("remote", remote).
+		Str("event", "nv.object.accessed").
+		Msg("object accessed")
 }

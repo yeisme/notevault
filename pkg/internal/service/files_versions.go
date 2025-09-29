@@ -164,6 +164,10 @@ func (fs *FileService) CreateFileVersion(ctx context.Context, user string, req *
 		return nil, fmt.Errorf("create new version by copy: %w", err)
 	}
 
+	// 发布对象版本化和更新事件
+	fs.publishObjectVersioned(bucket, req.ObjectKey, ui.VersionID, req.BaseVersion)
+	fs.publishObjectUpdated(bucket, req.ObjectKey, ui.VersionID, "", 0, req.ContentType, lastPathComponent(req.ObjectKey), "create-version")
+
 	return &types.CreateFileVersionResponse{
 		ObjectKey: req.ObjectKey,
 		VersionID: ui.VersionID,
@@ -187,6 +191,9 @@ func (fs *FileService) DeleteFileVersion(ctx context.Context, user, objectKey, v
 		return &types.DeleteFileVersionResponse{ObjectKey: objectKey, VersionID: versionID, Success: false, Error: err.Error()}, nil
 	}
 
+	// 发布对象删除事件（特定版本）
+	fs.publishObjectDeleted(bucket, objectKey, versionID, false)
+
 	return &types.DeleteFileVersionResponse{ObjectKey: objectKey, VersionID: versionID, Success: true}, nil
 }
 
@@ -209,6 +216,10 @@ func (fs *FileService) RestoreFileVersion(ctx context.Context, user, objectKey, 
 	if err != nil {
 		return &types.RestoreFileVersionResponse{ObjectKey: objectKey, FromVersion: versionID, Success: false, Error: err.Error()}, nil
 	}
+
+	// 发布对象恢复与更新事件
+	fs.publishObjectRestored(bucket, objectKey, versionID, ui.VersionID)
+	fs.publishObjectUpdated(bucket, objectKey, ui.VersionID, "", 0, "", lastPathComponent(objectKey), "restore-version")
 
 	return &types.RestoreFileVersionResponse{ObjectKey: objectKey, FromVersion: versionID, RestoredAs: ui.VersionID, Success: true}, nil
 }

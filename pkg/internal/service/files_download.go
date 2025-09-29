@@ -30,6 +30,9 @@ func (fs *FileService) PresignedGetURLs(ctx context.Context, req *types.GetFiles
 		}
 
 		results = append(results, d)
+
+		// 发布访问事件（通过预签名链接）
+		fs.publishObjectAccessed(bucket, item.ObjectKey, "read", "presigned", "", "")
 	}
 
 	return &types.GetFilesURLResponse{Results: results}, nil
@@ -62,6 +65,9 @@ func (fs *FileService) StatObject(ctx context.Context, user, objectKey string) (
 		Bucket:       bucket,
 		UserMetadata: info.UserMetadata,
 	}
+
+	// 发布访问事件（元信息读取视为一次访问）
+	fs.publishObjectAccessed(bucket, objectKey, "head", "server", "", "")
 
 	return obj, nil
 }
@@ -101,6 +107,9 @@ func (fs *FileService) OpenObject(ctx context.Context, user, objectKey string) (
 		Bucket:       bucket,
 		UserMetadata: info.UserMetadata,
 	}
+
+	// 发布访问事件（服务端读流）
+	fs.publishObjectAccessed(bucket, objectKey, "read", "server", "", "")
 
 	return obj, meta, nil
 }

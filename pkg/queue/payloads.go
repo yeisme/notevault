@@ -59,6 +59,43 @@ type ObjectDeletedPayload struct {
 	DeletedSince string    `json:"deleted_since,omitempty"` // 起始删除时间（RFC3339），可选
 }
 
+// ObjectVersionedPayload 对象产生新版本（用于版本控制跟踪）.
+type ObjectVersionedPayload struct {
+	Object        ObjectRef `json:"object"`
+	BaseVersionID string    `json:"base_version_id,omitempty"` // 基线版本（若有）
+}
+
+// ObjectRestoredPayload 对象从历史版本恢复.
+type ObjectRestoredPayload struct {
+	Object      ObjectRef `json:"object"`
+	FromVersion string    `json:"from_version,omitempty"`
+	RestoredAs  string    `json:"restored_as,omitempty"`
+}
+
+// ObjectMovedPayload 对象存储路径变更（重命名/移动）.
+type ObjectMovedPayload struct {
+	Source      ObjectRef `json:"source"`
+	Destination ObjectRef `json:"destination"`
+	Reason      string    `json:"reason,omitempty"`
+}
+
+// ObjectAccessedPayload 对象被访问（用于热点数据统计）.
+type ObjectAccessedPayload struct {
+	Object     ObjectRef `json:"object"`
+	Method     string    `json:"method,omitempty"` // read/download/head
+	Via        string    `json:"via,omitempty"`    // server/presigned
+	UserAgent  string    `json:"user_agent,omitempty"`
+	RemoteAddr string    `json:"remote_addr,omitempty"`
+}
+
+// ObjectStorageFullPayload 对象存储空间不足告警.
+type ObjectStorageFullPayload struct {
+	Bucket     string `json:"bucket"`
+	UsedBytes  int64  `json:"used_bytes,omitempty"`
+	LimitBytes int64  `json:"limit_bytes,omitempty"`
+	Threshold  int    `json:"threshold,omitempty"` // 触发阈值百分比
+}
+
 // -------------------------- 向量解析领域 --------------------------
 
 // VectorParseRequestedPayload 请求解析并向量化.

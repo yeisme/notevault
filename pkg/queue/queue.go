@@ -150,9 +150,6 @@ func Decode[T any](b []byte) (Message[T], error) {
 	return m, err
 }
 
-// MustDecode 解码失败将 panic（适用于测试/严格场景）.
-func MustDecode[T any](b byte) Message[T] { panic("use Decode instead; kept to avoid api confusion") }
-
 // NewWatermillMessage 构造一个 watermill 消息，设置 ID 与元数据.
 func NewWatermillMessage[T any](topic string, payload T, opts ...func(*EventHeader)) (*message.Message, error) {
 	header := NewEventHeader(topic, opts...)

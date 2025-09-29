@@ -117,6 +117,15 @@ func (fs *FileService) UploadSingleFile(ctx context.Context, user string,
 	// 构建响应
 	response := fs.buildUploadResponse(objectKey, hash, actualFileName, size, uploadInfo, metadata)
 
+	// 发布对象写入/更新事件
+	ctype := ""
+	if metadata != nil {
+		ctype = metadata.ContentType
+	}
+
+	fs.publishObjectStored(uploadInfo.Bucket, objectKey, uploadInfo.VersionID, uploadInfo.ETag, size, ctype, actualFileName, "upload-single")
+	fs.publishObjectUpdated(uploadInfo.Bucket, objectKey, uploadInfo.VersionID, uploadInfo.ETag, size, ctype, actualFileName, "upload-single")
+
 	return &response, nil
 }
 
@@ -155,6 +164,15 @@ func (fs *FileService) UploadBatchFiles(ctx context.Context, user string,
 			failed++
 		} else {
 			response := fs.buildUploadResponse(objectKey, hash, actualFileName, size, uploadInfo, meta)
+			// 发布对象写入/更新事件
+			ctype := ""
+			if meta != nil {
+				ctype = meta.ContentType
+			}
+
+			fs.publishObjectStored(uploadInfo.Bucket, objectKey, uploadInfo.VersionID, uploadInfo.ETag, size, ctype, actualFileName, "upload-batch")
+			fs.publishObjectUpdated(uploadInfo.Bucket, objectKey, uploadInfo.VersionID, uploadInfo.ETag, size, ctype, actualFileName, "upload-batch")
+
 			results = append(results, response)
 			successful++
 		}
