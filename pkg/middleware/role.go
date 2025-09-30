@@ -4,6 +4,7 @@ package middleware
 import (
 	"context"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -58,12 +59,52 @@ func parseRole(s string) Role {
 func RoleMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		r := parseRole(c.GetHeader("X-Role"))
+		// 若未显式指定 X-Role，则尝试根据 oauth2-proxy 注入的组头推断角色
+		if r == RoleUser {
+			groups := c.GetHeader("X-Auth-Request-Groups")
+			if groups == "" {
+				groups = c.GetHeader("X-Forwarded-Groups")
+			}
+
+			if groups != "" {
+				if rg := parseRoleFromGroups(groups); rg != RoleUser {
+					r = rg
+				}
+			}
+		}
 		// 保存到 gin context
 		c.Set("role", r)
 		// 也保存到 request context，便于下游 service 获取
 		ctx := context.WithValue(c.Request.Context(), roleKey{}, r)
 		c.Request = c.Request.WithContext(ctx)
 		c.Next()
+	}
+}
+
+// parseRoleFromGroups 尝试从逗号分隔的 group 列表中推断角色。
+// 例如：nv-admin/nv-enterprise/nv-member 或 admin/enterprise/member.
+func parseRoleFromGroups(groups string) Role {
+	if strings.TrimSpace(groups) == "" {
+		return RoleUser
+	}
+	// 拆分并归一化
+	parts := strings.Split(groups, ",")
+	for i := range parts {
+		parts[i] = strings.ToLower(strings.TrimSpace(parts[i]))
+	}
+
+	has := func(name string) bool {
+		return slices.Contains(parts, name)
+	}
+	switch {
+	case has("nv-admin") || has("admin"):
+		return RoleAdmin
+	case has("nv-enterprise") || has("enterprise"):
+		return RoleEnterprise
+	case has("nv-member") || has("member"):
+		return RoleMember
+	default:
+		return RoleUser
 	}
 }
 

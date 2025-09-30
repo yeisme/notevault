@@ -60,6 +60,7 @@ const (
 type (
 	// AppConfig 全局应用程序配置.
 	AppConfig struct {
+		Auth           AuthConfig           `mapstructure:"auth"`            // 统一认证配置
 		DB             DBConfig             `mapstructure:"db"`              // DBConfig 数据库配置
 		S3             S3Config             `mapstructure:"s3"`              // S3Config 对象存储配置
 		MQ             MQConfig             `mapstructure:"mq"`              // MQConfig 消息队列配置
@@ -157,6 +158,7 @@ func SetReloadCallback(callback func()) {
 // setAllDefaults 设置所有配置的默认值.
 func setAllDefaults(v *viper.Viper) {
 	var (
+		authConfig      AuthConfig
 		serverConfig    ServerConfig
 		dbConfig        DBConfig
 		s3Config        S3Config
@@ -170,6 +172,7 @@ func setAllDefaults(v *viper.Viper) {
 		eventsConfig    EventsConfig
 	)
 
+	authConfig.setDefaults(v)
 	serverConfig.setDefaults(v)
 	dbConfig.setDefaults(v)
 	s3Config.setDefaults(v)

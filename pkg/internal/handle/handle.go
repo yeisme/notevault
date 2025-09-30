@@ -15,12 +15,31 @@ func DefaultHandler(c *gin.Context) {
 }
 
 func checkUser(c *gin.Context) (string, error) {
-	// 提取用户名：Header 优先 -> query 参数 -> 默认 test-user（便于测试）
-	user := c.GetHeader("X-User")
-	if user == "" {
-		user = c.Query("user")
+	// 优先从 oauth2-proxy 注入的头中读取（按常见头部顺序）
+	// 参考：https://oauth2-proxy.github.io/oauth2-proxy/
+	candidates := []string{
+		"X-Auth-Request-Email", // nginx auth_request 常用
+		"X-Forwarded-Email",    // oauth2-proxy -set-xauthrequest 会设置
+		"X-Auth-Request-User",  // 某些 provider 仅有 user
+		"X-Forwarded-User",
+		"X-User", // 兼容旧自定义头，方便测试
 	}
-	// 测试默认值，不为 Debug 或者 Test 模式时
+
+	var user string
+
+	for _, h := range candidates {
+		if v := strings.TrimSpace(c.GetHeader(h)); v != "" {
+			user = v
+			break
+		}
+	}
+
+	// 兼容 query 参数（仅开发/测试场景使用）
+	if user == "" {
+		user = strings.TrimSpace(c.Query("user"))
+	}
+
+	// 开发/测试默认用户（仅非 Release 模式）
 	if user == "" && gin.Mode() != gin.ReleaseMode {
 		user = "test-user@example.com"
 	}

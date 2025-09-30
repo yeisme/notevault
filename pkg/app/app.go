@@ -95,6 +95,8 @@ func NewApp(configPath string) *App {
 		gin.Recovery(),
 		gzip.Gzip(gzip.DefaultCompression),
 		middleware.CORSMiddleware(config.Server),
+		// 统一认证（优先 oauth2-proxy 注入的认证头）
+		middleware.AuthMiddleware(config.Auth),
 		middleware.TracingMiddleware(),
 		middleware.PrometheusMiddleware(),
 		middleware.StorageMiddleware(manager),
